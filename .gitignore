@@ -1,0 +1,12 @@
+# Python
+cloudcost-backend/venv/
+__pycache__/
+*.pyc
+
+# Node
+cloudcost-frontend/node_modules/
+
+# Misc
+.env
+*.log
+.DS_Store
