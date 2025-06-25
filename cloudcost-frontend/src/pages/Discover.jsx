@@ -5,7 +5,9 @@ export default function Discover() {
   const [formData, setFormData] = useState({
     access_key: '',
     secret_key: '',
+    region: '',
     tenant_id: '',
+    client_id: '',
     client_secret: ''
   });
   const [resources, setResources] = useState([]);
@@ -36,7 +38,6 @@ export default function Discover() {
       const data = await response.json();
       console.log("API raw response:", data);
       console.log("HTTP status:", response.status);
-
 
       if (response.ok) {
         setResources(data.resources);
@@ -72,6 +73,11 @@ export default function Discover() {
               <label>Secret Key</label>
               <input name="secret_key" type="password" className="form-control" placeholder="Enter Secret Key" onChange={handleChange} />
             </div>
+            <div className="mb-3">
+              <label>Region</label>
+              <input name="region" className="form-control" placeholder="e.g., ap-south-1" onChange={handleChange} />
+            </div>
+
           </>
         ) : (
           <>
@@ -83,6 +89,15 @@ export default function Discover() {
               <label>Client Secret</label>
               <input name="client_secret" type="password" className="form-control" placeholder="Enter Client Secret" onChange={handleChange} />
             </div>
+            <div className="mb-3">
+              <label>Client ID</label>
+              <input
+              name="client_id"
+              className="form-control"
+              placeholder="Enter Client ID (Application ID)"
+              onChange={handleChange}
+              />
+              </div>
           </>
         )}
 

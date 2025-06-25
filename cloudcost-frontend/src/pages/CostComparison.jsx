@@ -24,8 +24,8 @@ export default function CostComparison() {
     setResult([]);
 
     for (const res of resources) {
-      if (!res.name || !res.usage || isNaN(res.usage) || !res.provider) {
-        setError('Please enter valid resource name, usage, and provider.');
+      if (!res.name || !res.usage || !res.provider || isNaN(res.usage)) {
+        setError('Please fill all fields correctly.');
         setLoading(false);
         return;
       }
@@ -34,8 +34,8 @@ export default function CostComparison() {
     const payload = {
       resources: resources.map(r => ({
         name: r.name,
-        usage: parseFloat(r.usage),
-        provider: r.provider
+        provider: r.provider,
+        usage: parseFloat(r.usage)
       }))
     };
 
@@ -47,10 +47,13 @@ export default function CostComparison() {
       });
 
       const data = await response.json();
-
       if (response.ok) {
-        setResult(data.comparison);
-      } else {
+  setResult(data.comparison);
+  localStorage.setItem("comparisonResult", JSON.stringify(data.comparison));
+  localStorage.setItem("mappingResult", JSON.stringify(data.mapping));
+}
+
+else {
         setError(data.detail || 'Comparison failed.');
       }
     } catch (err) {
@@ -83,7 +86,7 @@ export default function CostComparison() {
               <input
                 type="number"
                 className="form-control"
-                placeholder="Usage (e.g., hours or GB)"
+                placeholder="Usage (e.g., 2)"
                 value={res.usage}
                 onChange={e => handleResourceChange(idx, 'usage', e.target.value)}
               />
@@ -94,19 +97,19 @@ export default function CostComparison() {
                 value={res.provider}
                 onChange={e => handleResourceChange(idx, 'provider', e.target.value)}
               >
-                <option value="">Provider</option>
+                <option value="">Select Provider</option>
                 <option value="AWS">AWS</option>
                 <option value="Azure">Azure</option>
               </select>
             </div>
           </div>
         ))}
-        <button type="button" className="btn btn-sm btn-secondary mb-3" onClick={addResource}>
+        <button type="button" className="btn btn-secondary mb-3" onClick={addResource}>
           + Add Resource
         </button>
         <br />
         <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Comparing...' : 'Compare Costs'}
+          {loading ? 'Comparing…' : 'Compare Costs'}
         </button>
       </form>
 

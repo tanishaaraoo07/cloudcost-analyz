@@ -1,44 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Report() {
   const [loading, setLoading] = useState(false);
+  const [costData, setCostData] = useState([]);
+  const [mappingData, setMappingData] = useState([]);
 
-  // Dummy values to simulate actual state (can replace later with props/context)
-  const costData = [
-    { service: 'EC2', aws_cost: 20, azure_cost: 25, gcp_cost: 18 },
-    { service: 'S3', aws_cost: 5, azure_cost: 6, gcp_cost: 4 }
-  ];
+  useEffect(() => {
+    const cost = localStorage.getItem("comparisonResult");
+    const mapping = localStorage.getItem("mappingResult");
 
-  const mappingData = [
-    { original_service: 'EC2', gcp_equivalent: 'Compute Engine' },
-    { original_service: 'S3', gcp_equivalent: 'Cloud Storage' }
-  ];
+    if (cost) setCostData(JSON.parse(cost));
+    if (mapping) setMappingData(JSON.parse(mapping));
+  }, []);
 
   const handleDownload = async () => {
-    setLoading(true);
+    if (costData.length === 0) {
+      alert("No cost comparison data found.");
+      return;
+    }
 
+    setLoading(true);
     try {
       const response = await fetch('http://localhost:8000/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cost_data: costData,
-          mapping_data: mappingData
-        }),
+        body: JSON.stringify({ cost_data: costData, mapping_data: mappingData }),
       });
+
+      if (!response.ok) throw new Error('Server error');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'cloud_report.pdf';
+      a.download = 'cloudcost_report.pdf';
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Failed to download PDF:', err);
+      console.error('Download failed:', err);
+      alert('Could not download report.');
     }
-
     setLoading(false);
   };
 
