@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import CostBarChart from '../components/CostBarChart';
 
 export default function CostComparison() {
-  const [resources, setResources] = useState([{ name: '', usage: '' }]);
+  const [resources, setResources] = useState([{ name: '', usage: '', provider: '' }]);
   const [result, setResult] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function CostComparison() {
   };
 
   const addResource = () => {
-    setResources([...resources, { name: '', usage: '' }]);
+    setResources([...resources, { name: '', usage: '', provider: '' }]);
   };
 
   const handleCompare = async (e) => {
@@ -23,21 +23,19 @@ export default function CostComparison() {
     setError('');
     setResult([]);
 
-    // Validate input
     for (const res of resources) {
-      if (!res.name || !res.usage || isNaN(res.usage)) {
-        setError('Please enter valid resource name and numeric usage.');
+      if (!res.name || !res.usage || isNaN(res.usage) || !res.provider) {
+        setError('Please enter valid resource name, usage, and provider.');
         setLoading(false);
         return;
       }
     }
 
-    // Prepare payload
     const payload = {
       resources: resources.map(r => ({
         name: r.name,
-        provider: 'AWS', // or 'Azure' — for now hardcoded, or you can add a dropdown per row
-        usage: parseFloat(r.usage)
+        usage: parseFloat(r.usage),
+        provider: r.provider
       }))
     };
 
@@ -89,6 +87,17 @@ export default function CostComparison() {
                 value={res.usage}
                 onChange={e => handleResourceChange(idx, 'usage', e.target.value)}
               />
+            </div>
+            <div className="col">
+              <select
+                className="form-select"
+                value={res.provider}
+                onChange={e => handleResourceChange(idx, 'provider', e.target.value)}
+              >
+                <option value="">Provider</option>
+                <option value="AWS">AWS</option>
+                <option value="Azure">Azure</option>
+              </select>
             </div>
           </div>
         ))}
