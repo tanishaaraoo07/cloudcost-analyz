@@ -161,13 +161,29 @@ import io
 async def generate_pdf(request: Request):
     try:
         body = await request.json()
-        cost_data = body.get("cost_data", [])
-        mapping_data = body.get("mapping_data", [])
+        raw_cost_data = body.get("cost_data", [])
+        raw_mapping_data = body.get("mapping_data", [])
 
-        # Generate PDF in memory (BytesIO)
+        # 🔄 Normalize cost data keys to match PDF expectations
+        cost_data = []
+        for item in raw_cost_data:
+            cost_data.append({
+                "service": item.get("type") or item.get("service", "Unnamed"),
+                "aws_cost": item.get("current_cost") if item.get("current_provider") == "AWS" else 0,
+                "azure_cost": item.get("current_cost") if item.get("current_provider") == "Azure" else 0,
+                "gcp_cost": item.get("gcp_cost", 0)
+            })
+
+        # 🔄 Normalize mapping keys
+        mapping_data = []
+        for m in raw_mapping_data:
+            mapping_data.append({
+                "source_service": m.get("original_service", "Unknown"),
+                "target_service": m.get("gcp_equivalent", "Unknown")
+            })
+
+        # Generate PDF
         pdf_buffer = generate_pdf_report(cost_data, mapping_data)
-
-        # Go to beginning of the BytesIO buffer
         pdf_buffer.seek(0)
 
         return StreamingResponse(
@@ -175,8 +191,10 @@ async def generate_pdf(request: Request):
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=cloudcost_report.pdf"}
         )
+
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 # 🔍 AWS Discovery Logic
 def discover_aws_resources(access_key: str, secret_key: str, region: str = "ap-south-1"):

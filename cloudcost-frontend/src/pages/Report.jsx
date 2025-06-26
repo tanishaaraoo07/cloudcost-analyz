@@ -14,37 +14,52 @@ export default function Report() {
   }, []);
 
   const handleDownload = async () => {
-    if (costData.length === 0) {
-      alert("No cost comparison data found.");
-      return;
-    }
+  if (costData.length === 0) {
+    alert("No cost comparison data found.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const response = await fetch('https://cloudcost-analyz.onrender.com/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cost_data: costData,
-          mapping_data: mappingData
-        }),
-      });
+  // 🔄 Transform cost data to backend-expected format
+  const transformedCostData = costData.map(item => ({
+    service: item.type || item.service || "Unnamed",
+    aws_cost: item.current_provider === "AWS" ? item.current_cost : 0,
+    azure_cost: item.current_provider === "Azure" ? item.current_cost : 0,
+    gcp_cost: item.gcp_cost ?? 0
+  }));
 
-      if (!response.ok) throw new Error('Server error');
+  // 🔄 Transform mapping data
+  const transformedMappingData = mappingData.map(item => ({
+    source_service: item.original_service || item.source_service || "Unknown",
+    target_service: item.gcp_equivalent || item.target_service || "Unknown"
+  }));
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'cloudcost_report.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Download failed:', err);
-      alert('Could not download report.');
-    }
-    setLoading(false);
-  };
+  setLoading(true);
+  try {
+    const response = await fetch('https://cloudcost-analyz.onrender.com/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cost_data: transformedCostData,
+        mapping_data: transformedMappingData
+      }),
+    });
+
+    if (!response.ok) throw new Error('Server error');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cloudcost_report.pdf';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Download failed:', err);
+    alert('Could not download report.');
+  }
+  setLoading(false);
+};
+
 
   const formatCost = (value) => (value !== undefined && !isNaN(value) ? `$${parseFloat(value).toFixed(2)}` : "$0.00");
 
