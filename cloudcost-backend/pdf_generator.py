@@ -5,43 +5,54 @@ from reportlab.platypus import Table, TableStyle
 from io import BytesIO
 
 def draw_bar_chart(c, x, y, data):
-    bar_width = 40
-    gap = 60
+    bar_width = 25
+    gap = 90
     max_height = 150
     base_y = y
 
     max_cost = max(
-        max(item.get("current_cost", 0), item.get("gcp_cost", 0))
+        max(item.get("aws_cost", 0), item.get("azure_cost", 0), item.get("gcp_cost", 0))
         for item in data
-        if isinstance(item.get("current_cost", 0), (int, float))
+        if isinstance(item.get("aws_cost", 0), (int, float))
     )
 
     for i, item in enumerate(data):
         left = x + i * gap
-        current_height = (item.get("current_cost", 0) / max_cost) * max_height if max_cost else 0
+        aws_height = (item.get("aws_cost", 0) / max_cost) * max_height if max_cost else 0
+        azure_height = (item.get("azure_cost", 0) / max_cost) * max_height if max_cost else 0
         gcp_height = (item.get("gcp_cost", 0) / max_cost) * max_height if max_cost else 0
 
-        # Current Provider (Blue)
+        # AWS (Blue)
         c.setFillColor(colors.blue)
-        c.rect(left, base_y, bar_width, current_height, fill=True)
+        c.rect(left, base_y, bar_width, aws_height, fill=True)
+
+        # Azure (Gray)
+        c.setFillColor(colors.gray)
+        c.rect(left + bar_width + 3, base_y, bar_width, azure_height, fill=True)
 
         # GCP (Green)
         c.setFillColor(colors.green)
-        c.rect(left + bar_width + 5, base_y, bar_width, gcp_height, fill=True)
+        c.rect(left + 2 * (bar_width + 3), base_y, bar_width, gcp_height, fill=True)
 
         # Labels
         c.setFillColor(colors.black)
-        c.drawString(left, base_y - 15, item.get("type", "Unknown"))
+        c.setFont("Helvetica", 7)
+        c.drawString(left, base_y - 12, item.get("service", "Unknown")[:10])
 
     # Legend
+    c.setFont("Helvetica", 9)
     c.setFillColor(colors.blue)
     c.rect(x, base_y + max_height + 20, 10, 10, fill=True)
     c.setFillColor(colors.black)
-    c.drawString(x + 15, base_y + max_height + 20, "Current Provider")
+    c.drawString(x + 15, base_y + max_height + 20, "AWS")
+
+    c.setFillColor(colors.gray)
+    c.rect(x + 70, base_y + max_height + 20, 10, 10, fill=True)
+    c.drawString(x + 85, base_y + max_height + 20, "Azure")
 
     c.setFillColor(colors.green)
-    c.rect(x + 120, base_y + max_height + 20, 10, 10, fill=True)
-    c.drawString(x + 135, base_y + max_height + 20, "GCP")
+    c.rect(x + 150, base_y + max_height + 20, 10, 10, fill=True)
+    c.drawString(x + 165, base_y + max_height + 20, "GCP")
 
 def generate_pdf_report(cost_data, mapping_data):
     buffer = BytesIO()
@@ -59,32 +70,32 @@ def generate_pdf_report(cost_data, mapping_data):
     c.drawString(50, y, "Cost Comparison Table:")
     y -= 20
 
-    table_data = [["Type", "Current Provider", "Current Cost ($)", "GCP Cost ($)", "Savings ($)"]]
+    table_data = [["Service", "AWS ($)", "Azure ($)", "GCP ($)"]]
     for item in cost_data:
         table_data.append([
-            item.get("type", "N/A"),
-            item.get("current_provider", "N/A"),
-            item.get("current_cost", 0),
-            item.get("gcp_cost", 0),
-            item.get("savings", 0)
+            item.get("service", "N/A"),
+            item.get("aws_cost", 0),
+            item.get("azure_cost", 0),
+            item.get("gcp_cost", 0)
         ])
 
-    table = Table(table_data, colWidths=[90]*5)
+    table = Table(table_data, colWidths=[120]*4)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("ALIGN", (1, 1), (-1, -1), "CENTER"),
     ]))
     table.wrapOn(c, width, height)
     table.drawOn(c, 50, y - len(table_data) * 18)
-    y -= (len(table_data) * 18) + 40
+    y -= (len(table_data) * 18) + 60
 
     # Chart
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, y, "Cost Comparison Chart:")
     y -= 180
     draw_bar_chart(c, 70, y, cost_data)
-    y -= 40
+    y -= 60
 
     # Mapping Table
     c.setFont("Helvetica-Bold", 12)
@@ -98,7 +109,7 @@ def generate_pdf_report(cost_data, mapping_data):
             m.get("target_service", "N/A")
         ])
 
-    maptable = Table(map_data, colWidths=[180, 180])
+    maptable = Table(map_data, colWidths=[200, 200])
     maptable.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgreen),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),

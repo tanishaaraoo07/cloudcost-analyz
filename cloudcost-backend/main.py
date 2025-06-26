@@ -7,7 +7,6 @@ from services.mapping import get_service_mapping
 from pdf_generator import generate_pdf_report
 
 from fastapi import Request
-from fastapi.responses import FileResponse
 
 
 import boto3
@@ -157,6 +156,7 @@ async def get_mapping(request: Request):
 
 
 # 📄 PDF GENERATION
+import io
 @app.post("/generate-pdf")
 async def generate_pdf(request: Request):
     try:
@@ -164,13 +164,16 @@ async def generate_pdf(request: Request):
         cost_data = body.get("cost_data", [])
         mapping_data = body.get("mapping_data", [])
 
-        # Generate report
+        # Generate PDF in memory (BytesIO)
         pdf_buffer = generate_pdf_report(cost_data, mapping_data)
 
-        return FileResponse(
-            path_or_file=pdf_buffer,
-            media_type='application/pdf',
-            filename="cloudcost_report.pdf"
+        # Go to beginning of the BytesIO buffer
+        pdf_buffer.seek(0)
+
+        return StreamingResponse(
+            content=pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=cloudcost_report.pdf"}
         )
     except Exception as e:
         return {"status": "error", "message": str(e)}
