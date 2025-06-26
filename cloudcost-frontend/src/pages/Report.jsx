@@ -34,6 +34,11 @@ export default function Report() {
 
     setLoading(true);
     try {
+      console.log("Sending to PDF:", {
+  cost_data: transformedCostData,
+  mapping_data: transformedMappingData
+});
+
       const response = await fetch('https://cloudcost-analyz.onrender.com/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
