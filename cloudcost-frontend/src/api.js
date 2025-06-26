@@ -1,5 +1,5 @@
 import axios from 'axios';
 
 export default axios.create({
-  baseURL: 'http://localhost:8000', // FastAPI base URL
+  baseURL: 'https://cloudcost-analyz.onrender.com', // Updated to Render live backend
 });
