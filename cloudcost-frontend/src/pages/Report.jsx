@@ -27,42 +27,56 @@ export default function Report() {
   }));
 
   const handleDownload = async () => {
-    if (transformedCostData.length === 0) {
-      alert("No cost comparison data found.");
-      return;
-    }
+  if (rawCostData.length === 0) {
+    alert("No cost comparison data found.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      console.log("Sending to PDF:", {
-  cost_data: transformedCostData,
-  mapping_data: transformedMappingData
-});
+  // ✅ Transform cost data to match backend expectations
+  const transformedCostData = rawCostData.map(item => ({
+    service: item.type || item.service || "Unnamed",
+    aws_cost: item.current_provider === "AWS" ? item.current_cost : 0,
+    azure_cost: item.current_provider === "Azure" ? item.current_cost : 0,
+    gcp_cost: item.gcp_cost ?? 0
+  }));
 
-      const response = await fetch('https://cloudcost-analyz.onrender.com/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cost_data: transformedCostData,
-          mapping_data: transformedMappingData
-        }),
-      });
+  const transformedMappingData = rawMappingData.map(item => ({
+    source_service: item.original_service || item.source_service || "Unknown",
+    target_service: item.gcp_equivalent || item.target_service || "Unknown"
+  }));
 
-      if (!response.ok) throw new Error('Server error');
+  console.log("📤 Sending to backend PDF:", {
+    cost_data: transformedCostData,
+    mapping_data: transformedMappingData
+  });
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'cloudcost_report.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Download failed:', err);
-      alert('Could not download report.');
-    }
-    setLoading(false);
-  };
+  setLoading(true);
+  try {
+    const response = await fetch('https://cloudcost-analyz.onrender.com/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cost_data: transformedCostData,
+        mapping_data: transformedMappingData
+      }),
+    });
+
+    if (!response.ok) throw new Error('Server error');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cloudcost_report.pdf';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Download failed:', err);
+    alert('Could not download report.');
+  }
+  setLoading(false);
+};
+
 
   const formatCost = (value) => (value !== undefined && !isNaN(value) ? `$${parseFloat(value).toFixed(2)}` : "$0.00");
 
