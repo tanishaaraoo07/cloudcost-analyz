@@ -4,25 +4,25 @@ from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 from io import BytesIO
 
-# Draws a bar chart comparing AWS, Azure, and GCP costs
 def draw_bar_chart(c, x, y, data):
     bar_width = 25
     gap = 90
     max_height = 150
     base_y = y
 
-    # Calculate maximum cost for scaling bars
+    # Handle missing or non-numeric values safely
     max_cost = max(
-        max(item.get("aws_cost", 0), item.get("azure_cost", 0), item.get("gcp_cost", 0))
+        max(float(item.get("aws_cost", 0) or 0),
+            float(item.get("azure_cost", 0) or 0),
+            float(item.get("gcp_cost", 0) or 0))
         for item in data
-        if isinstance(item.get("aws_cost", 0), (int, float))
-    )
+    ) or 1  # Avoid division by zero
 
     for i, item in enumerate(data):
         left = x + i * gap
-        aws_height = (item.get("aws_cost", 0) / max_cost) * max_height if max_cost else 0
-        azure_height = (item.get("azure_cost", 0) / max_cost) * max_height if max_cost else 0
-        gcp_height = (item.get("gcp_cost", 0) / max_cost) * max_height if max_cost else 0
+        aws_height = (float(item.get("aws_cost", 0)) / max_cost) * max_height
+        azure_height = (float(item.get("azure_cost", 0)) / max_cost) * max_height
+        gcp_height = (float(item.get("gcp_cost", 0)) / max_cost) * max_height
 
         # Draw AWS bar
         c.setFillColor(colors.blue)
@@ -36,12 +36,13 @@ def draw_bar_chart(c, x, y, data):
         c.setFillColor(colors.green)
         c.rect(left + 2 * (bar_width + 3), base_y, bar_width, gcp_height, fill=True)
 
-        # Label the service
+        # Draw service label
+        service = item.get("service", "Unnamed")
         c.setFillColor(colors.black)
         c.setFont("Helvetica", 7)
-        c.drawString(left, base_y - 12, item.get("service", "Unknown")[:10])
+        c.drawString(left, base_y - 12, service[:10])
 
-    # Legend
+    # Chart legend
     c.setFont("Helvetica", 9)
     c.setFillColor(colors.blue)
     c.rect(x, base_y + max_height + 20, 10, 10, fill=True)
@@ -56,7 +57,6 @@ def draw_bar_chart(c, x, y, data):
     c.rect(x + 150, base_y + max_height + 20, 10, 10, fill=True)
     c.drawString(x + 165, base_y + max_height + 20, "GCP")
 
-# Generates the complete PDF report
 def generate_pdf_report(cost_data, mapping_data):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
@@ -68,47 +68,63 @@ def generate_pdf_report(cost_data, mapping_data):
     c.drawString(50, y, "CloudCost Analyzer Report")
     y -= 30
 
-    # Cost Table Title
+    # Cost Table
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, y, "Cost Comparison Table:")
     y -= 20
 
-    # Populate table with data from frontend
     table_data = [["Service", "AWS ($)", "Azure ($)", "GCP ($)"]]
+    total_aws = total_azure = total_gcp = 0
+
     for item in cost_data:
+        aws = float(item.get("aws_cost", 0) or 0)
+        azure = float(item.get("azure_cost", 0) or 0)
+        gcp = float(item.get("gcp_cost", 0) or 0)
+        service = item.get("service", "N/A")
+
         table_data.append([
-            item.get("service", "N/A"),
-            item.get("aws_cost", 0),
-            item.get("azure_cost", 0),
-            item.get("gcp_cost", 0)
+            service,
+            f"{aws:.2f}",
+            f"{azure:.2f}",
+            f"{gcp:.2f}"
         ])
+        total_aws += aws
+        total_azure += azure
+        total_gcp += gcp
+
+    # Add totals row
+    table_data.append([
+        "Total",
+        f"{total_aws:.2f}",
+        f"{total_azure:.2f}",
+        f"{total_gcp:.2f}"
+    ])
 
     table = Table(table_data, colWidths=[120]*4)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightblue),
+        ("BACKGROUND", (-4, -1), (-1, -1), colors.beige),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
         ("ALIGN", (1, 1), (-1, -1), "CENTER"),
     ]))
     table.wrapOn(c, width, height)
     table.drawOn(c, 50, y - len(table_data) * 18)
-    y -= (len(table_data) * 18) + 60
+    y -= (len(table_data) * 18) + 80
 
-    # Chart Title
+    # Chart
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, y, "Cost Comparison Chart:")
     y -= 180
-
-    # Bar chart
     draw_bar_chart(c, 70, y, cost_data)
-    y -= 60
+    y -= 100
 
-    # Service Mapping Table Title
+    # Mapping Table
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, y, "Service Mapping:")
     y -= 20
 
-    # Service Mapping Table
     map_data = [["Original Service", "GCP Equivalent"]]
     for m in mapping_data:
         map_data.append([
@@ -124,8 +140,12 @@ def generate_pdf_report(cost_data, mapping_data):
     ]))
     maptable.wrapOn(c, width, height)
     maptable.drawOn(c, 50, y - len(map_data) * 18)
+    y -= (len(map_data) * 18) + 30
 
-    # Finalize PDF
+    # Footer
+    c.setFont("Helvetica-Oblique", 8)
+    c.drawRightString(width - 50, 30, "Generated by CloudCost Analyzer | © 2025")
+
     c.showPage()
     c.save()
     buffer.seek(0)
