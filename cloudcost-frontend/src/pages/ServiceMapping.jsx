@@ -10,14 +10,27 @@ export default function ServiceMapping() {
     const resourceList = services.split(',').map(s => s.trim());
 
     const res = await fetch("http://localhost:8000/mapping", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, resources: resourceList })
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ provider, resources: resourceList }) // ✅ This is correct
+});
+
 
     const data = await res.json();
     if (data.status === "success") {
-      setMappingResults(data.mappings);
+      const formattedMappings = data.mappings.map(item => ({
+        source_service: item.original_service,
+        target_service: item.gcp_equivalent
+      }));
+
+      // Save to state
+      setMappingResults(formattedMappings);
+
+      // ✅ Save to localStorage
+      localStorage.setItem("mappingResult", JSON.stringify(formattedMappings));
+
+      // 🐞 Debug for Report.jsx
+      console.log("Saved Mapping to localStorage:", formattedMappings);
     }
   };
 
@@ -27,7 +40,7 @@ export default function ServiceMapping() {
       <form className="mt-3" onSubmit={handleSubmit}>
         <div className="mb-3">
           <label>Cloud Provider</label>
-          <select className="form-select" onChange={e => setProvider(e.target.value)}>
+          <select className="form-select" onChange={e => setProvider(e.target.value)} value={provider}>
             <option value="AWS">AWS</option>
             <option value="Azure">Azure</option>
           </select>
@@ -57,8 +70,8 @@ export default function ServiceMapping() {
             <tbody>
               {mappingResults.map((item, idx) => (
                 <tr key={idx}>
-                  <td>{item.original_service}</td>
-                  <td>{item.gcp_equivalent}</td>
+                  <td>{item.source_service}</td>
+                  <td>{item.target_service}</td>
                 </tr>
               ))}
             </tbody>

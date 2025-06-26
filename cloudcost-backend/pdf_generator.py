@@ -10,13 +10,16 @@ def draw_bar_chart(c, x, y, data):
     max_height = 150
     base_y = y
 
-    max_cost = max(max(d["current_cost"], d["gcp_cost"]) for d in data if isinstance(d["current_cost"], (int, float)))
+    max_cost = max(
+        max(item.get("current_cost", 0), item.get("gcp_cost", 0))
+        for item in data
+        if isinstance(item.get("current_cost", 0), (int, float))
+    )
 
     for i, item in enumerate(data):
         left = x + i * gap
-
-        current_height = (item["current_cost"] / max_cost) * max_height if max_cost else 0
-        gcp_height = (item["gcp_cost"] / max_cost) * max_height if max_cost else 0
+        current_height = (item.get("current_cost", 0) / max_cost) * max_height if max_cost else 0
+        gcp_height = (item.get("gcp_cost", 0) / max_cost) * max_height if max_cost else 0
 
         # Current Provider (Blue)
         c.setFillColor(colors.blue)
@@ -28,7 +31,7 @@ def draw_bar_chart(c, x, y, data):
 
         # Labels
         c.setFillColor(colors.black)
-        c.drawString(left, base_y - 15, item["type"])
+        c.drawString(left, base_y - 15, item.get("type", "Unknown"))
 
     # Legend
     c.setFillColor(colors.blue)
@@ -59,11 +62,11 @@ def generate_pdf_report(cost_data, mapping_data):
     table_data = [["Type", "Current Provider", "Current Cost ($)", "GCP Cost ($)", "Savings ($)"]]
     for item in cost_data:
         table_data.append([
-            item["type"],
-            item["current_provider"],
-            item["current_cost"],
-            item["gcp_cost"],
-            item["savings"]
+            item.get("type", "N/A"),
+            item.get("current_provider", "N/A"),
+            item.get("current_cost", 0),
+            item.get("gcp_cost", 0),
+            item.get("savings", 0)
         ])
 
     table = Table(table_data, colWidths=[90]*5)
@@ -90,7 +93,10 @@ def generate_pdf_report(cost_data, mapping_data):
 
     map_data = [["Original Service", "GCP Equivalent"]]
     for m in mapping_data:
-        map_data.append([m["original_service"], m["gcp_equivalent"]])
+        map_data.append([
+            m.get("source_service", "N/A"),
+            m.get("target_service", "N/A")
+        ])
 
     maptable = Table(map_data, colWidths=[180, 180])
     maptable.setStyle(TableStyle([

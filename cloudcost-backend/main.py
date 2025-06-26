@@ -6,6 +6,10 @@ from services.compare import compare_costs
 from services.mapping import get_service_mapping
 from pdf_generator import generate_pdf_report
 
+from fastapi import Request
+from fastapi.responses import FileResponse
+
+
 import boto3
 from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
@@ -118,24 +122,58 @@ def compare_costs_handler(request: CompareRequest):
     }
 
 # 🔁 MAPPING SERVICE
+from fastapi import Request
+
+SERVICE_MAP = {
+    "EC2": "Compute Engine",
+    "S3": "Cloud Storage",
+    "RDS": "Cloud SQL",
+    "Lambda": "Cloud Functions",
+    "DynamoDB": "Firestore",
+    "CloudWatch": "Operations Suite",
+    "IAM": "Cloud IAM",
+    "ELB": "Cloud Load Balancing",
+    # add more as needed
+}
+
 @app.post("/mapping")
-def mapping(request: MappingRequest):
+async def get_mapping(request: Request):
     try:
-        result = get_service_mapping(request.provider, request.resources)
-        return {"status": "success", "mappings": result}
+        body = await request.json()
+        provider = body.get("provider")
+        resources = body.get("resources", [])
+
+        mappings = []
+        for service in resources:
+            gcp_equiv = SERVICE_MAP.get(service, "No direct equivalent")
+            mappings.append({
+                "original_service": service,
+                "gcp_equivalent": gcp_equiv
+            })
+
+        return {"status": "success", "mappings": mappings}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return {"status": "error", "message": str(e)}
+
 
 # 📄 PDF GENERATION
 @app.post("/generate-pdf")
 async def generate_pdf(request: Request):
-    body = await request.json()
-    pdf_data = generate_pdf_report(body["cost_data"], body["mapping_data"])
-    return StreamingResponse(
-        pdf_data,
-        media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=cloudcost_report.pdf"}
-    )
+    try:
+        body = await request.json()
+        cost_data = body.get("cost_data", [])
+        mapping_data = body.get("mapping_data", [])
+
+        # Generate report
+        pdf_buffer = generate_pdf_report(cost_data, mapping_data)
+
+        return FileResponse(
+            path_or_file=pdf_buffer,
+            media_type='application/pdf',
+            filename="cloudcost_report.pdf"
+        )
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # 🔍 AWS Discovery Logic
 def discover_aws_resources(access_key: str, secret_key: str, region: str = "ap-south-1"):
