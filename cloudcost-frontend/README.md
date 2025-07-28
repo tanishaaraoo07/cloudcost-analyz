@@ -10,3 +10,30 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+# CloudCost Analyzer – Multi-Cloud Migration Assessment Tool
+
+## 🚀 Live Demo
+Frontend: https://cloudcost-analyz.vercel.app  
+Backend: https://cloudcost-analyz.onrender.com/docs
+
+## 🧠 Features
+- Compare AWS, Azure, GCP service costs
+- Generate cloud migration PDF reports
+- Map service equivalents across providers
+
+## 🧑‍💻 Tech Stack
+- React.js + Bootstrap
+- FastAPI (Python)
+- Docker (Backend)
+- Vercel + Render
+- GitHub Actions (CI/CD)
+
+## 📦 How to Run Locally
+
+### Frontend
+```bash
+cd cloudcost-frontend
+npm install
+npm run dev

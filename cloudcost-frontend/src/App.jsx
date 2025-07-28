@@ -29,3 +29,10 @@ function App() {
   );
 }
 export default App;
+
+useEffect(() => {
+  fetch('https://cloudcost-analyz.onrender.com/')
+    .then(() => console.log("Backend awake"))
+    .catch(() => console.log("Backend wake-up failed"));
+}, []);
+
