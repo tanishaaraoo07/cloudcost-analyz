@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -10,6 +9,13 @@ import ServiceMapping from './pages/ServiceMapping';
 import Report from './pages/Report';
 
 function App() {
+  // ✅ Wake up backend when frontend loads
+  useEffect(() => {
+    fetch('https://cloudcost-analyz.onrender.com/')
+      .then(() => console.log("Backend awake"))
+      .catch(() => console.log("Backend wake-up failed"));
+  }, []);
+
   return (
     <Router>
       <Navbar />
@@ -28,11 +34,5 @@ function App() {
     </Router>
   );
 }
+
 export default App;
-
-useEffect(() => {
-  fetch('https://cloudcost-analyz.onrender.com/')
-    .then(() => console.log("Backend awake"))
-    .catch(() => console.log("Backend wake-up failed"));
-}, []);
-
