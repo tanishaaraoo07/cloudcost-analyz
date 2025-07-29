@@ -14,6 +14,34 @@ from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
 
 app = FastAPI()
+from pymongo import MongoClient
+
+MONGO_URI = "mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost"
+client = MongoClient(MONGO_URI)
+db = client["cloudcost"]
+users = db["users"]
+
+@app.post("/signup")
+async def signup(request: Request):
+    data = await request.json()
+    if users.find_one({"email": data["email"]}):
+        return JSONResponse(content={"message": "User already exists"}, status_code=400)
+    
+    users.insert_one({
+        "name": data["name"],
+        "email": data["email"],
+        "password": data["password"]  # ❗ In real apps, use hashed passwords!
+    })
+    return {"token": "dummy-token"}
+
+@app.post("/login")
+async def login(request: Request):
+    data = await request.json()
+    user = users.find_one({"email": data["email"], "password": data["password"]})
+    if user:
+        return {"token": "dummy-token"}
+    return JSONResponse(content={"message": "Invalid credentials"}, status_code=401)
+
 
 # Enable CORS
 app.add_middleware(

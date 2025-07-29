@@ -8,33 +8,39 @@ export default function Report() {
 
   useEffect(() => {
     const raw = JSON.parse(localStorage.getItem("cloudCostData")) || {};
-const rawCost = raw.costSummary || [];
-const rawMap = raw.mappingSummary || [];
+    const rawCost = raw.costSummary || [];
+    const rawMap = raw.mappingSummary || [];
 
     console.log("Loaded cost from localStorage:", rawCost);
-  console.log("Loaded mapping from localStorage:", rawMap);
+    console.log("Loaded mapping from localStorage:", rawMap);
 
     // Format cost data
-  
-const formattedCost = rawCost.map(item => ({
-  type: item.type || item.service || "Unnamed",
-  current_provider: item.current_provider || "Unknown",
-  current_cost: item.current_cost || 0,
-  gcp_cost: item.gcp_cost || 0,
-}));
-
+    const formattedCost = rawCost.map(item => ({
+      type: item.type || item.service || "Unnamed",
+      current_provider: item.current_provider || "Unknown",
+      current_cost: item.current_cost || 0,
+      gcp_cost: item.gcp_cost || 0,
+      aws_cost: item.aws_cost || 0,
+      azure_cost: item.azure_cost || 0,
+    }));
 
     setCostData(formattedCost);
 
-    // Format mapping data for report and PDF
     const formattedMap = rawMap.map(m => ({
-    original_service: m.original_service || m.source_service || "Unknown",
-    gcp_equivalent: m.gcp_equivalent || m.target_service || "Unknown",
-  }));
-  setMappingData(formattedMap);
-}, []);
+      source_service: m.original_service || m.source_service || "Unknown",
+      target_service: m.gcp_equivalent || m.target_service || "Unknown",
+    }));
+
+    setMappingData(formattedMap);
+  }, []);
 
   const downloadPDF = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("🔒 Please log in to download the PDF report.");
+      return;
+    }
+
     try {
       const response = await axios.post(
         "/generate-pdf",
@@ -80,11 +86,10 @@ const formattedCost = rawCost.map(item => ({
         <h5 className="mt-4">📘 Service Mappings:</h5>
         <ul className="list-group mb-3">
           {mappingData.map((item, index) => (
-  <li key={index} className="list-group-item">
-    {item.source_service} → {item.target_service}
-  </li>
-))}
-
+            <li key={index} className="list-group-item">
+              {item.source_service} → {item.target_service}
+            </li>
+          ))}
         </ul>
 
         <button className="btn btn-success w-100" onClick={downloadPDF}>

@@ -1,10 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import heroImage from "../assets/hero-image.png";
 import tanishaImg from "../assets/tanisha.jpg";
 import contactImg from "../assets/contact.png";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  const [showPopup, setShowPopup] = useState(false);
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    fetch("https://formspree.io/f/manbjgpz", {
+      method: "POST",
+      body: new FormData(form),
+      headers: {
+        Accept: "application/json",
+      },
+    }).then((response) => {
+      if (response.ok) {
+        setShowPopup(true);
+        form.reset();
+        setTimeout(() => setShowPopup(false), 3000); // hide after 3s
+      } else {
+        alert("❌ Failed to send. Please try again.");
+      }
+    });
+  };
+
   return (
     <div className="home-wrapper">
       {/* Hero Section */}
@@ -85,7 +108,7 @@ export default function Home() {
           {/* Connect Us Form */}
           <div className="card shadow p-4 w-100" style={{ maxWidth: "500px", backgroundColor: "white", color: "#212529" }}>
             <h5 className="text-success mb-3">📬 Connect With Creator</h5>
-            <form action="https://formspree.io/f/manbjgpz" method="POST">
+            <form onSubmit={handleFormSubmit}>
               <div className="mb-3">
                 <label>Name</label>
                 <input name="name" className="form-control" required />
@@ -99,13 +122,20 @@ export default function Home() {
                 <textarea name="message" className="form-control" rows="3" required />
               </div>
 
-              {/* Hidden options for FormSubmit */}
+              {/* Optional hidden settings */}
               <input type="hidden" name="_captcha" value="false" />
               <input type="hidden" name="_template" value="box" />
               <input type="hidden" name="_autoresponse" value="Thanks for reaching out! Tanisha will contact you shortly." />
 
               <button className="btn btn-success w-100">Send</button>
             </form>
+
+            {/* ✅ Success Popup */}
+            {showPopup && (
+              <div className="alert alert-success mt-3 mb-0" role="alert">
+                ✅ Message sent! We’ll reach out soon.
+              </div>
+            )}
           </div>
         </div>
       </section>

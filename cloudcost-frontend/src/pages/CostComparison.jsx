@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "../api";
-import CostBarChart from "../components/CostBarChart"; // ✅ Chart component import
+import CostBarChart from "../components/CostBarChart";
 
 export default function CostComparison() {
   const [resources, setResources] = useState([{ type: "EC2", usage: 1, provider: "AWS" }]);
@@ -19,8 +19,15 @@ export default function CostComparison() {
   };
 
   const handleCompare = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("🔒 Please log in to compare cloud costs.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
       const response = await axios.post("/compare", {
         resources: resources.map((r) => ({
@@ -35,16 +42,8 @@ export default function CostComparison() {
 
       setResults(comparison);
 
-      // ✅ Save to your original key
-      localStorage.setItem(
-        "cloudCostData",
-        JSON.stringify({
-          costSummary: comparison,
-          mappingSummary: mapping,
-        })
-      );
-
-      // ✅ ALSO save to keys used by Report.jsx
+      // Save to localStorage for Report.jsx
+      localStorage.setItem("cloudCostData", JSON.stringify({ costSummary: comparison, mappingSummary: mapping }));
       localStorage.setItem("comparisonResult", JSON.stringify(comparison));
       localStorage.setItem("mappingResult", JSON.stringify(mapping));
     } catch (err) {
@@ -117,7 +116,7 @@ export default function CostComparison() {
               ))}
             </ul>
 
-            {/* ✅ Chart Visualization */}
+            {/* Chart */}
             <div className="card p-3 shadow-sm">
               <CostBarChart comparison={results} />
             </div>

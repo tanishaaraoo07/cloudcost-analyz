@@ -12,17 +12,17 @@ export default function Discover() {
   const [error, setError] = useState(null);
 
   const handleDiscover = async () => {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      alert("🔒 Please log in to use Discover Resources.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    try {
-      console.log("Sending request:", {
-        provider,
-        access_key: accessKey,
-        secret_key: secretKey,
-        region,
-        use_mock: useMock,
-      });
 
+    try {
       const response = await axios.post("/discover", {
         provider,
         access_key: accessKey,
@@ -50,11 +50,7 @@ export default function Discover() {
 
         <div className="mb-3">
           <label className="form-label">Cloud Provider</label>
-          <select
-            className="form-select"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-          >
+          <select className="form-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
             <option>AWS</option>
             <option>Azure</option>
           </select>
