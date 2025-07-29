@@ -6,6 +6,7 @@ export default function Discover() {
   const [accessKey, setAccessKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [region, setRegion] = useState("");
+  const [useMock, setUseMock] = useState(false); // ✅ New state for toggle
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,11 +20,15 @@ export default function Discover() {
         access_key: accessKey,
         secret_key: secretKey,
         region,
+        use_mock: useMock, // ✅ Send mock flag
       });
       setResources(response.data.resources);
     } catch (err) {
-      console.error(err);
-      setError("Discovery failed");
+      console.error("Discovery API Error:", err);
+      if (err.response) {
+        console.error("Response data:", err.response.data);
+      }
+      setError("Discovery failed. Check your keys or network.");
     } finally {
       setLoading(false);
     }
@@ -36,7 +41,11 @@ export default function Discover() {
 
         <div className="mb-3">
           <label className="form-label">Cloud Provider</label>
-          <select className="form-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
+          <select
+            className="form-select"
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+          >
             <option>AWS</option>
             <option>Azure</option>
           </select>
@@ -56,7 +65,7 @@ export default function Discover() {
         <div className="mb-3">
           <label className="form-label">Secret Key</label>
           <input
-            type="text"
+            type="password"
             className="form-control"
             value={secretKey}
             onChange={(e) => setSecretKey(e.target.value)}
@@ -75,7 +84,25 @@ export default function Discover() {
           />
         </div>
 
-        <button className="btn btn-success w-100" onClick={handleDiscover} disabled={loading}>
+        {/* ✅ Mock Toggle */}
+        <div className="form-check mb-3">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="mockToggle"
+            checked={useMock}
+            onChange={(e) => setUseMock(e.target.checked)}
+          />
+          <label className="form-check-label" htmlFor="mockToggle">
+            Use Mock Discovery (for Recruiter Demo)
+          </label>
+        </div>
+
+        <button
+          className="btn btn-success w-100"
+          onClick={handleDiscover}
+          disabled={loading}
+        >
           {loading ? "Discovering..." : "Discover Resources"}
         </button>
 

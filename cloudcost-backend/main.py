@@ -30,15 +30,18 @@ app.add_middleware(
 async def discover_resources(request: Request):
     body = await request.json()
     provider = body.get("provider")
+    use_mock = body.get("use_mock", False)  # ✅ Default false
 
-    print("🔥 FORCED MOCK RESPONSE: ignoring request body")
-    return {
-        "resources": [
-            {"instance_id": "i-demo123", "type": "t2.micro", "state": "running"},
-            {"instance_id": "i-demo456", "type": "t2.medium", "state": "stopped"},
-            {"instance_id": "i-demo789", "type": "t3.large", "state": "stopped"}
-        ]
-    }
+    # ✅ Return mock data for recruiter demo
+    if use_mock:
+        print("✅ Mock mode enabled")
+        return {
+            "resources": [
+                {"instance_id": "i-demo123", "type": "t2.micro", "state": "running"},
+                {"instance_id": "i-demo456", "type": "t2.medium", "state": "stopped"},
+                {"instance_id": "i-demo789", "type": "t3.large", "state": "stopped"}
+            ]
+        }
 
     try:
         if provider == "AWS":
@@ -54,7 +57,9 @@ async def discover_resources(request: Request):
         return {"resources": resources}
 
     except Exception as e:
+        print("❌ Discovery failed:", e)
         return JSONResponse(status_code=500, content={"detail": str(e)})
+
 
 # 🧮 COMPARE COSTS
 @app.post("/compare")
