@@ -28,6 +28,9 @@ app.add_middleware(
 # 🚀 DISCOVER API
 @app.post("/discover")
 async def discover_resources(request: Request):
+    body = await request.json()
+    provider = body.get("provider")
+
     print("🔥 FORCED MOCK RESPONSE: ignoring request body")
     return {
         "resources": [
@@ -42,17 +45,8 @@ async def discover_resources(request: Request):
             access_key = body.get("access_key")
             secret_key = body.get("secret_key")
             region = body.get("region", "ap-south-1")
+
             resources = discover_aws_resources(access_key, secret_key, region)
-
-        elif provider == "Azure":
-            tenant_id = body.get("tenant_id")
-            client_id = body.get("client_id")
-            client_secret = body.get("client_secret")
-            subscription_id = "e877a43d-dc26-4dd1-9fdc-bcc0144b1cfb"
-
-            resources = discover_azure_resources(
-                tenant_id, client_id, client_secret, subscription_id
-            )
 
         else:
             return JSONResponse(status_code=400, content={"detail": "Unsupported provider"})
@@ -60,7 +54,6 @@ async def discover_resources(request: Request):
         return {"resources": resources}
 
     except Exception as e:
-        print("❌ Error during discovery:", str(e))
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 # 🧮 COMPARE COSTS
