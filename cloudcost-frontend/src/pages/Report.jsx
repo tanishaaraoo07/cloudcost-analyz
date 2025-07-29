@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./Report.css";
+import "./report.css";
 
 export default function Report() {
   const [costData, setCostData] = useState([]);
