@@ -30,11 +30,12 @@ app.add_middleware(
 async def discover_resources(request: Request):
     body = await request.json()
     provider = body.get("provider")
-    use_mock = body.get("use_mock", False)  # ✅ Default false
+    use_mock = body.get("use_mock", False)  # 👈 must default to False
 
-    # ✅ Return mock data for recruiter demo
+    print("🧪 use_mock =", use_mock)
+
     if use_mock:
-        print("✅ Mock mode enabled")
+        print("✅ Returning mock data")
         return {
             "resources": [
                 {"instance_id": "i-demo123", "type": "t2.micro", "state": "running"},
@@ -43,22 +44,13 @@ async def discover_resources(request: Request):
             ]
         }
 
-    try:
-        if provider == "AWS":
-            access_key = body.get("access_key")
-            secret_key = body.get("secret_key")
-            region = body.get("region", "ap-south-1")
-
-            resources = discover_aws_resources(access_key, secret_key, region)
-
-        else:
-            return JSONResponse(status_code=400, content={"detail": "Unsupported provider"})
-
+    # Real AWS discovery logic
+    if provider == "AWS":
+        access_key = body.get("access_key")
+        secret_key = body.get("secret_key")
+        region = body.get("region", "ap-south-1")
+        resources = discover_aws_resources(access_key, secret_key, region)
         return {"resources": resources}
-
-    except Exception as e:
-        print("❌ Discovery failed:", e)
-        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 
 # 🧮 COMPARE COSTS

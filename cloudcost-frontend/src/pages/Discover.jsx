@@ -14,7 +14,14 @@ export default function Discover() {
   const handleDiscover = async () => {
     setLoading(true);
     setError(null);
-    try {
+    try {console.log("Sending request:", {
+  provider,
+  access_key: accessKey,
+  secret_key: secretKey,
+  region,
+  use_mock: useMock,
+});
+
       const response = await axios.post("/discover", {
         provider,
         access_key: accessKey,
