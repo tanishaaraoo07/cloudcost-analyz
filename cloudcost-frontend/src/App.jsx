@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import TopNavbar from './components/Navbar';
 import Home from './pages/Home';
 import Discover from './pages/Discover';
 import CostComparison from './pages/CostComparison';
 import ServiceMapping from './pages/ServiceMapping';
 import Report from './pages/Report';
+import Footer from './components/footer';
+import './index.css';
 
 function App() {
-  // ✅ Wake up backend when frontend loads
   useEffect(() => {
     fetch('https://cloudcost-analyz.onrender.com/')
       .then(() => console.log("Backend awake"))
@@ -18,18 +18,18 @@ function App() {
 
   return (
     <Router>
-      <Navbar />
-      <div className="d-flex">
-        <Sidebar />
-        <div className="container-fluid p-4" style={{ flex: 1 }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/compare" element={<CostComparison />} />
-            <Route path="/mapping" element={<ServiceMapping />} />
-            <Route path="/report" element={<Report />} />
-          </Routes>
-        </div>
+      <TopNavbar />
+      <div className="d-flex flex-column min-vh-100">
+        <main className="flex-grow-1 px-0" style={{ width: '100%', margin: 0, padding: 0 }}>
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/discover" element={<Discover />} />
+    <Route path="/compare" element={<CostComparison />} />
+    <Route path="/mapping" element={<ServiceMapping />} />
+    <Route path="/report" element={<Report />} />
+  </Routes>
+</main>
+        <Footer />
       </div>
     </Router>
   );

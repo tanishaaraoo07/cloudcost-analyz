@@ -1,149 +1,94 @@
-import React, { useState } from 'react';
-import CostBarChart from '../components/CostBarChart';
+import React, { useState } from "react";
+import axios from "../api";
 
 export default function CostComparison() {
-  const [resources, setResources] = useState([{ name: '', usage: '', provider: '' }]);
-  const [result, setResult] = useState([]);
-  const [error, setError] = useState('');
+  const [resources, setResources] = useState([{ type: "EC2", usage: 1, provider: "AWS" }]);
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleResourceChange = (index, field, value) => {
+  const handleAdd = () => {
+    setResources([...resources, { type: "EC2", usage: 1, provider: "AWS" }]);
+  };
+
+  const handleChange = (idx, field, value) => {
     const updated = [...resources];
-    updated[index][field] = value;
+    updated[idx][field] = value;
     setResources(updated);
   };
 
-  const addResource = () => {
-    setResources([...resources, { name: '', usage: '', provider: '' }]);
-  };
-
-  const handleCompare = async (e) => {
-    e.preventDefault();
+  const handleCompare = async () => {
     setLoading(true);
-    setError('');
-    setResult([]);
-
-    for (const res of resources) {
-      if (!res.name || !res.usage || !res.provider || isNaN(res.usage)) {
-        setError('Please fill all fields correctly.');
-        setLoading(false);
-        return;
-      }
-    }
-
-    const payload = {
-      resources: resources.map(r => ({
-        name: r.name,
-        provider: r.provider,
-        usage: parseFloat(r.usage)
-      }))
-    };
-
+    setError(null);
     try {
-      const response = await fetch('http://localhost:8000/compare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const response = await axios.post("/compare", {
+        resources: resources.map((r) => ({ name: r.type, usage: Number(r.usage), provider: r.provider })),
       });
-
-      const data = await response.json();
-      if (response.ok) {
-  setResult(data.comparison);
-  localStorage.setItem("comparisonResult", JSON.stringify(data.comparison));
-  localStorage.setItem("mappingResult", JSON.stringify(data.mapping));
-}
-
-else {
-        setError(data.detail || 'Comparison failed.');
-      }
+      setResults(response.data.comparison || []);
+      localStorage.setItem("comparisonResult", JSON.stringify(response.data.comparison));
+      localStorage.setItem("mappingResult", JSON.stringify(response.data.mapping));
     } catch (err) {
-      setError('API Error: ' + err.message);
+      setError("Comparison failed");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div>
-      <h3>Cost Comparison</h3>
-      <form onSubmit={handleCompare}>
+    <div className="d-flex justify-content-center align-items-start px-3 py-5">
+      <div className="card shadow p-4 w-100" style={{ maxWidth: "700px" }}>
+        <h3 className="text-center text-success mb-4">📊 Cost Comparison</h3>
+
         {resources.map((res, idx) => (
-          <div className="row mb-3" key={idx}>
-            <div className="col">
-              <select
-                className="form-select"
-                value={res.name}
-                onChange={e => handleResourceChange(idx, 'name', e.target.value)}
-              >
-                <option value="">Select Resource</option>
-                <option value="EC2">EC2</option>
-                <option value="S3">S3</option>
-                <option value="VM">VM</option>
-                <option value="Blob Storage">Blob Storage</option>
+          <div className="row g-3 mb-3" key={idx}>
+            <div className="col-md-4">
+              <select className="form-select" value={res.type} onChange={(e) => handleChange(idx, "type", e.target.value)}>
+                <option>EC2</option>
+                <option>S3</option>
+                <option>VM</option>
+                <option>Blob Storage</option>
               </select>
             </div>
-            <div className="col">
+            <div className="col-md-4">
               <input
                 type="number"
                 className="form-control"
-                placeholder="Usage (e.g., 2)"
                 value={res.usage}
-                onChange={e => handleResourceChange(idx, 'usage', e.target.value)}
+                onChange={(e) => handleChange(idx, "usage", e.target.value)}
+                placeholder="Usage"
               />
             </div>
-            <div className="col">
-              <select
-                className="form-select"
-                value={res.provider}
-                onChange={e => handleResourceChange(idx, 'provider', e.target.value)}
-              >
-                <option value="">Select Provider</option>
-                <option value="AWS">AWS</option>
-                <option value="Azure">Azure</option>
+            <div className="col-md-4">
+              <select className="form-select" value={res.provider} onChange={(e) => handleChange(idx, "provider", e.target.value)}>
+                <option>AWS</option>
+                <option>Azure</option>
               </select>
             </div>
           </div>
         ))}
-        <button type="button" className="btn btn-secondary mb-3" onClick={addResource}>
-          + Add Resource
-        </button>
-        <br />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Comparing…' : 'Compare Costs'}
-        </button>
-      </form>
 
-      {error && <div className="alert alert-danger mt-3">{error}</div>}
-
-      {result.length > 0 && (
-        <div className="mt-4">
-          <h5>Comparison Result</h5>
-          <table className="table table-bordered">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Current Provider</th>
-                <th>Current Cost ($)</th>
-                <th>GCP Cost ($)</th>
-                <th>Savings ($)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.map((r, idx) => (
-                <tr key={idx}>
-                  <td>{r.type}</td>
-                  <td>{r.current_provider}</td>
-                  <td>{r.current_cost}</td>
-                  <td>{r.gcp_cost}</td>
-                  <td>{r.savings}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="d-flex justify-content-between mb-3">
+          <button className="btn btn-outline-secondary" onClick={handleAdd}>+ Add Resource</button>
+          <button className="btn btn-success" onClick={handleCompare} disabled={loading}>
+            {loading ? "Comparing..." : "Compare Costs"}
+          </button>
         </div>
-      )}
 
-      <CostBarChart comparison={result} />
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        {results.length > 0 && (
+          <div className="mt-4">
+            <h5 className="text-primary">Results:</h5>
+            <ul className="list-group">
+              {results.map((item, idx) => (
+                <li key={idx} className="list-group-item">
+                  {item.type} → {item.current_provider} (${item.current_cost}) vs GCP (${item.gcp_cost}) | Savings: ${item.savings}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

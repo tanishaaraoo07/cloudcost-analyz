@@ -1,8 +1,10 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+}
+
+.nav-link.active {
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .logo {
@@ -19,12 +21,8 @@
 }
 
 @keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -35,8 +33,45 @@
 
 .card {
   padding: 2em;
+  max-width: 700px;
+  width: 100%;
 }
 
 .read-the-docs {
   color: #888;
+}
+
+.center-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 1rem;
+}
+
+.report-wrapper,
+.home-wrapper,
+.discover-wrapper,
+.compare-wrapper,
+.mapping-wrapper {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.discover-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.discover-card {
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 12px;
 }
