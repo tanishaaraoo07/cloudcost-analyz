@@ -2,6 +2,8 @@ import React from "react";
 import heroImage from "../assets/hero-image.png";
 import tanishaImg from "../assets/tanisha.jpg";
 import contactImg from "../assets/contact.png";
+import { Link } from 'react-router-dom';
+
 
 export default function Home() {
   return (
@@ -12,9 +14,11 @@ export default function Home() {
     <div className="text-center text-md-start">
       <h1 className="display-5 fw-bold">CloudCost Analyzer</h1>
       <p className="lead">Welcome to the services</p>
+      <Link to="/explore">
       <button className="btn mt-2" style={{ backgroundColor: '#25C39F', color: 'white' }}>
         Explore Now
       </button>
+      </Link>
     </div>
     <img
       src={heroImage}
