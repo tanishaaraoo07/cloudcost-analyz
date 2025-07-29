@@ -143,33 +143,44 @@ async def get_mapping(request: Request):
 
 # 📄 PDF GENERATION
 import io
+import base64
+
 @app.post("/generate-pdf")
 async def generate_pdf(request: Request):
     try:
         body = await request.json()
         raw_cost_data = body.get("cost_data", [])
         raw_mapping_data = body.get("mapping_data", [])
+        chart_image_base64 = body.get("chart_image", None)
 
-        # 🔄 Normalize cost data keys to match PDF expectations
+        # ✅ Normalize cost data
         cost_data = []
         for item in raw_cost_data:
+            service = item.get("type") or item.get("service", "Unnamed")
+            provider = item.get("current_provider")
+            aws = item.get("aws_cost", 0)
+            azure = item.get("azure_cost", 0)
+            gcp = item.get("gcp_cost", 0)
+
             cost_data.append({
-                "service": item.get("type") or item.get("service", "Unnamed"),
-                "aws_cost": item.get("current_cost") if item.get("current_provider") == "AWS" else 0,
-                "azure_cost": item.get("current_cost") if item.get("current_provider") == "Azure" else 0,
-                "gcp_cost": item.get("gcp_cost", 0)
+                "service": service,
+                "aws_cost": item["current_cost"] if provider == "AWS" else aws,
+                "azure_cost": item["current_cost"] if provider == "Azure" else azure,
+                "gcp_cost": gcp
             })
 
-        # 🔄 Normalize mapping keys
+        # ✅ Normalize mapping data
         mapping_data = []
         for m in raw_mapping_data:
+            source = m.get("original_service") or m.get("source_service", "Unknown")
+            target = m.get("gcp_equivalent") or m.get("target_service", "Unknown")
             mapping_data.append({
-                "source_service": m.get("original_service", "Unknown"),
-                "target_service": m.get("gcp_equivalent", "Unknown")
+                "source_service": source,
+                "target_service": target
             })
 
-        # Generate PDF
-        pdf_buffer = generate_pdf_report(cost_data, mapping_data)
+        # ✅ Generate PDF
+        pdf_buffer = generate_pdf_report(cost_data, mapping_data, chart_image_base64)
         pdf_buffer.seek(0)
 
         return StreamingResponse(
@@ -177,8 +188,8 @@ async def generate_pdf(request: Request):
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=cloudcost_report.pdf"}
         )
-
     except Exception as e:
+        print("❌ PDF generation failed:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 

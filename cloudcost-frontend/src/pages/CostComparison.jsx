@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "../api";
+import CostBarChart from "../components/CostBarChart"; // ✅ Chart component import
 
 export default function CostComparison() {
   const [resources, setResources] = useState([{ type: "EC2", usage: 1, provider: "AWS" }]);
@@ -22,11 +23,30 @@ export default function CostComparison() {
     setError(null);
     try {
       const response = await axios.post("/compare", {
-        resources: resources.map((r) => ({ name: r.type, usage: Number(r.usage), provider: r.provider })),
+        resources: resources.map((r) => ({
+          name: r.type,
+          usage: Number(r.usage),
+          provider: r.provider,
+        })),
       });
-      setResults(response.data.comparison || []);
-      localStorage.setItem("comparisonResult", JSON.stringify(response.data.comparison));
-      localStorage.setItem("mappingResult", JSON.stringify(response.data.mapping));
+
+      const comparison = response.data.comparison || [];
+      const mapping = response.data.mapping || [];
+
+      setResults(comparison);
+
+      // ✅ Save to your original key
+      localStorage.setItem(
+        "cloudCostData",
+        JSON.stringify({
+          costSummary: comparison,
+          mappingSummary: mapping,
+        })
+      );
+
+      // ✅ ALSO save to keys used by Report.jsx
+      localStorage.setItem("comparisonResult", JSON.stringify(comparison));
+      localStorage.setItem("mappingResult", JSON.stringify(mapping));
     } catch (err) {
       setError("Comparison failed");
     } finally {
@@ -42,7 +62,11 @@ export default function CostComparison() {
         {resources.map((res, idx) => (
           <div className="row g-3 mb-3" key={idx}>
             <div className="col-md-4">
-              <select className="form-select" value={res.type} onChange={(e) => handleChange(idx, "type", e.target.value)}>
+              <select
+                className="form-select"
+                value={res.type}
+                onChange={(e) => handleChange(idx, "type", e.target.value)}
+              >
                 <option>EC2</option>
                 <option>S3</option>
                 <option>VM</option>
@@ -59,7 +83,11 @@ export default function CostComparison() {
               />
             </div>
             <div className="col-md-4">
-              <select className="form-select" value={res.provider} onChange={(e) => handleChange(idx, "provider", e.target.value)}>
+              <select
+                className="form-select"
+                value={res.provider}
+                onChange={(e) => handleChange(idx, "provider", e.target.value)}
+              >
                 <option>AWS</option>
                 <option>Azure</option>
               </select>
@@ -68,7 +96,9 @@ export default function CostComparison() {
         ))}
 
         <div className="d-flex justify-content-between mb-3">
-          <button className="btn btn-outline-secondary" onClick={handleAdd}>+ Add Resource</button>
+          <button className="btn btn-outline-secondary" onClick={handleAdd}>
+            + Add Resource
+          </button>
           <button className="btn btn-success" onClick={handleCompare} disabled={loading}>
             {loading ? "Comparing..." : "Compare Costs"}
           </button>
@@ -79,13 +109,18 @@ export default function CostComparison() {
         {results.length > 0 && (
           <div className="mt-4">
             <h5 className="text-primary">Results:</h5>
-            <ul className="list-group">
+            <ul className="list-group mb-4">
               {results.map((item, idx) => (
                 <li key={idx} className="list-group-item">
                   {item.type} → {item.current_provider} (${item.current_cost}) vs GCP (${item.gcp_cost}) | Savings: ${item.savings}
                 </li>
               ))}
             </ul>
+
+            {/* ✅ Chart Visualization */}
+            <div className="card p-3 shadow-sm">
+              <CostBarChart comparison={results} />
+            </div>
           </div>
         )}
       </div>

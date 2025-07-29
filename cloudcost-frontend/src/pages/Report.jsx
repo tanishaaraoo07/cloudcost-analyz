@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import html2canvas from "html2canvas";
-import axios from "../api"; // your axios instance
+import axios from "../api";
 import "./report.css";
 
 export default function Report() {
@@ -8,25 +7,40 @@ export default function Report() {
   const [mappingData, setMappingData] = useState([]);
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("cloudCostData"));
-    if (data) {
-      setCostData(data.costSummary || []);
-      setMappingData(data.mappingSummary || []);
-    }
-  }, []);
+    const raw = JSON.parse(localStorage.getItem("cloudCostData")) || {};
+const rawCost = raw.costSummary || [];
+const rawMap = raw.mappingSummary || [];
+
+    console.log("Loaded cost from localStorage:", rawCost);
+  console.log("Loaded mapping from localStorage:", rawMap);
+
+    // Format cost data
+  
+const formattedCost = rawCost.map(item => ({
+  type: item.type || item.service || "Unnamed",
+  current_provider: item.current_provider || "Unknown",
+  current_cost: item.current_cost || 0,
+  gcp_cost: item.gcp_cost || 0,
+}));
+
+
+    setCostData(formattedCost);
+
+    // Format mapping data for report and PDF
+    const formattedMap = rawMap.map(m => ({
+    original_service: m.original_service || m.source_service || "Unknown",
+    gcp_equivalent: m.gcp_equivalent || m.target_service || "Unknown",
+  }));
+  setMappingData(formattedMap);
+}, []);
 
   const downloadPDF = async () => {
     try {
-      const chartCanvas = document.querySelector("canvas");
-      const chartImage = await html2canvas(chartCanvas);
-      const base64Image = chartImage.toDataURL("image/png");
-
       const response = await axios.post(
         "/generate-pdf",
         {
           cost_data: costData,
           mapping_data: mappingData,
-          chart_image: base64Image,
         },
         { responseType: "blob" }
       );
@@ -52,10 +66,11 @@ export default function Report() {
         <ul className="list-group mb-3">
           {costData.map((item, index) => (
             <li key={index} className="list-group-item">
-              {item.service} → AWS: ${item.aws_cost}, Azure: ${item.azure_cost}, GCP: ${item.gcp_cost}
+              → AWS: ${item.aws_cost?.toFixed(2) || "0.00"}, Azure: ${item.azure_cost?.toFixed(2) || "0.00"}, GCP: ${item.gcp_cost?.toFixed(2) || "0.00"}
             </li>
           ))}
         </ul>
+
         <strong>
           Total → AWS: ${costData.reduce((sum, i) => sum + (i.aws_cost || 0), 0).toFixed(2)}, Azure: $
           {costData.reduce((sum, i) => sum + (i.azure_cost || 0), 0).toFixed(2)}, GCP: $
@@ -65,10 +80,11 @@ export default function Report() {
         <h5 className="mt-4">📘 Service Mappings:</h5>
         <ul className="list-group mb-3">
           {mappingData.map((item, index) => (
-            <li key={index} className="list-group-item">
-              {item.source_service} → {item.target_service}
-            </li>
-          ))}
+  <li key={index} className="list-group-item">
+    {item.source_service} → {item.target_service}
+  </li>
+))}
+
         </ul>
 
         <button className="btn btn-success w-100" onClick={downloadPDF}>

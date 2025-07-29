@@ -6,7 +6,7 @@ export default function Discover() {
   const [accessKey, setAccessKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [region, setRegion] = useState("");
-  const [useMock, setUseMock] = useState(false); // ✅ New state for toggle
+  const [useMock, setUseMock] = useState(false);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,21 +14,23 @@ export default function Discover() {
   const handleDiscover = async () => {
     setLoading(true);
     setError(null);
-    try {console.log("Sending request:", {
-  provider,
-  access_key: accessKey,
-  secret_key: secretKey,
-  region,
-  use_mock: useMock,
-});
+    try {
+      console.log("Sending request:", {
+        provider,
+        access_key: accessKey,
+        secret_key: secretKey,
+        region,
+        use_mock: useMock,
+      });
 
       const response = await axios.post("/discover", {
         provider,
         access_key: accessKey,
         secret_key: secretKey,
         region,
-        use_mock: useMock, // ✅ Send mock flag
+        use_mock: useMock,
       });
+
       setResources(response.data.resources);
     } catch (err) {
       console.error("Discovery API Error:", err);
@@ -42,8 +44,8 @@ export default function Discover() {
   };
 
   return (
-    <div className="discover-wrapper">
-      <div className="discover-card shadow p-4">
+    <div className="d-flex justify-content-center align-items-start px-3 py-5">
+      <div className="card shadow p-4 w-100" style={{ maxWidth: "700px" }}>
         <h3 className="mb-4 text-center text-success">🌩️ Resource Discovery</h3>
 
         <div className="mb-3">
@@ -91,7 +93,6 @@ export default function Discover() {
           />
         </div>
 
-        {/* ✅ Mock Toggle */}
         <div className="form-check mb-3">
           <input
             className="form-check-input"
