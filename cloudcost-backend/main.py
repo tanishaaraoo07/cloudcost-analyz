@@ -18,53 +18,49 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Later restrict to frontend URL if needed
+    allow_origins=["*"],  # Replace with frontend URL in prod
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 # 🚀 DISCOVER API
 @app.post("/discover")
 async def discover_resources(request: Request):
-    body = await request.json()
-    provider = body.get("provider")
-    print("Received request body:", body)
+    print("🔥 FORCED MOCK RESPONSE: ignoring request body")
+    return {
+        "resources": [
+            {"instance_id": "i-demo123", "type": "t2.micro", "state": "running"},
+            {"instance_id": "i-demo456", "type": "t2.medium", "state": "stopped"},
+            {"instance_id": "i-demo789", "type": "t3.large", "state": "stopped"}
+        ]
+    }
 
     try:
         if provider == "AWS":
-            print("Calling AWS discovery...")
             access_key = body.get("access_key")
             secret_key = body.get("secret_key")
-            region = body.get("region", "ap-south-1")  # default if missing
+            region = body.get("region", "ap-south-1")
             resources = discover_aws_resources(access_key, secret_key, region)
 
         elif provider == "Azure":
-            print("Calling Azure discovery...")
             tenant_id = body.get("tenant_id")
-            client_id = body.get("client_id")  # ✅ Corrected this line
+            client_id = body.get("client_id")
             client_secret = body.get("client_secret")
-            subscription_id = "e877a43d-dc26-4dd1-9fdc-bcc0144b1cfb"  # ✅ Replace with your real subscription ID
-
-            print("Tenant ID:", tenant_id)
-            print("Client ID:", client_id)
-            print("Client Secret:", client_secret)
+            subscription_id = "e877a43d-dc26-4dd1-9fdc-bcc0144b1cfb"
 
             resources = discover_azure_resources(
-                tenant_id=tenant_id,
-                client_id=client_id,
-                client_secret=client_secret,
-                subscription_id=subscription_id
+                tenant_id, client_id, client_secret, subscription_id
             )
 
         else:
             return JSONResponse(status_code=400, content={"detail": "Unsupported provider"})
 
-        print("Discovery result:", resources)
         return {"resources": resources}
 
     except Exception as e:
-        print("Error during discovery:", e)
+        print("❌ Error during discovery:", str(e))
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 # 🧮 COMPARE COSTS
@@ -208,7 +204,7 @@ def discover_aws_resources(access_key: str, secret_key: str, region: str = "ap-s
     try:
         instances = ec2_client.describe_instances()
     except Exception as e:
-        print(f"Error during AWS discovery: {e}")
+        print(f"❌ Error during AWS discovery: {e}")
         return []
 
     ec2_list = []
@@ -219,6 +215,7 @@ def discover_aws_resources(access_key: str, secret_key: str, region: str = "ap-s
                 "type": inst.get("InstanceType"),
                 "state": inst.get("State", {}).get("Name")
             })
+
     return ec2_list
 
 # 🔍 Azure Discovery Logic
