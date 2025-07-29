@@ -72,7 +72,7 @@ export default function Home() {
             <p className="mb-1">📞 7000000917</p>
             <p className="mb-1">📧 damalatanisha7@gmail.com</p>
             <p className="mb-1">🏫 Silicon University</p>
-            <p>🌐 www.reallygreatsite.com</p>
+            <p>🌐 https://cloudcost-analyz.vercel.app/</p>
           </div>
           <img src={contactImg} alt="Contact" className="img-fluid mt-4 mt-md-0" style={{ maxWidth: '300px' }} />
         </div>
