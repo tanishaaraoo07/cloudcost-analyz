@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || "https://cloudcost-backend.onrender.com",
-  
+const instance = axios.create({
+  baseURL: "https://your-backend-service.onrender.com", 
+  withCredentials: true
 });
 
 export default API;

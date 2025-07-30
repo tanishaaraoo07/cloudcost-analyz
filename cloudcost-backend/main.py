@@ -37,7 +37,7 @@ try:
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
     print(e)
-
+origins = ["https://your-frontend.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://cloudcost-analyz.vercel.app"],
