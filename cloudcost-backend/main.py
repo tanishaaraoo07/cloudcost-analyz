@@ -15,11 +15,18 @@ from azure.mgmt.compute import ComputeManagementClient
 
 app = FastAPI()
 from pymongo import MongoClient
+import certifi
+import os
+
+from pymongo import MongoClient
+import certifi
 
 MONGO_URI = "mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost"
-client = MongoClient(MONGO_URI)
+
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())  # ← add this
 db = client["cloudcost"]
 users = db["users"]
+
 
 @app.post("/signup")
 async def signup(request: Request):
