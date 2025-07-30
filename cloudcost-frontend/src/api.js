@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios from "axios";
 
-export default axios.create({
-  baseURL: 'https://cloudcost-analyz.onrender.com'
-,
-withCredentials: true, // Updated to Render live backend
+const API = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:8000",
 });
+
+export default API;

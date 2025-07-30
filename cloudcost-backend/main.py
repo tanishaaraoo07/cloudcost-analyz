@@ -7,7 +7,7 @@ from services.mapping import get_service_mapping
 from pdf_generator import generate_pdf_report
 
 from fastapi import Request
-
+from pymongo.server_api import ServerApi
 
 import boto3
 from azure.identity import ClientSecretCredential
@@ -28,9 +28,15 @@ import certifi
 
 MONGO_URI = "mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost"
 
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())  # ← add this
+client = MongoClient("mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost", server_api=ServerApi('1'))  # ← add this
 db = client["cloudcost"]
 users = db["users"]
+
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 
 app.add_middleware(
     CORSMiddleware,
