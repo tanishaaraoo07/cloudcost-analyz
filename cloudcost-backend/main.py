@@ -28,7 +28,7 @@ import certifi
 
 MONGO_URI = "mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost"
 
-client = MongoClient("mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost", tls=True,server_api=ServerApi('1'))  # ← add this
+client = MongoClient("mongodb+srv://cbtanisha10:JPbvppiNTw9APRk3@cloudcost.mjrwyxi.mongodb.net/?retryWrites=true&w=majority&appName=cloudcost",server_api=ServerApi('1'))  # ← add this
 db = client["cloudcost"]
 users = db["users"]
 
