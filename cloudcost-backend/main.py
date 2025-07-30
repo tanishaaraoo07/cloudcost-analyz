@@ -32,6 +32,13 @@ client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())  # ← add this
 db = client["cloudcost"]
 users = db["users"]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://cloudcost-analyz.vercel.app"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/signup")
 async def signup(request: Request):
