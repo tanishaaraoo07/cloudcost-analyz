@@ -14,6 +14,11 @@ from azure.identity import ClientSecretCredential
 from azure.mgmt.compute import ComputeManagementClient
 
 app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "CloudCost API is running"}
+
 from pymongo import MongoClient
 import certifi
 import os
