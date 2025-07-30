@@ -44,13 +44,12 @@ async def login(request: Request):
 
 
 # Enable CORS
-origins = [
-    "http://localhost:3000", 
-    "https://cloudcost-analyz.vercel.app"
-]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with frontend URL in prod
+    allow_origins=[
+        "http://localhost:5173",          # Local Vite dev server
+        "https://cloudcost-analyz.vercel.app",  # Your deployed frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
