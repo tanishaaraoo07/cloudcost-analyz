@@ -7,7 +7,10 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "https://cloudcost-analyz-7nre.vercel.app", // exact frontend domain
+  credentials: true
+}));
 
 const PORT = process.env.PORT || 5000;
 

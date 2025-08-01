@@ -1,9 +1,8 @@
-import axios from "axios";
-
-const instance = axios.create({
-  baseURL: "https://cloudcost-analyz.onrender.com",
+axios.post("https://cloudcost-analyz.onrender.com/api/auth/login", {
+  email,
+  password
+}, {
   withCredentials: true
 });
 
-export default instance;
 
