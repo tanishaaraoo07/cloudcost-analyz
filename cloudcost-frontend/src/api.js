@@ -1,4 +1,6 @@
-fetch("https://cloudcost-analyz.onrender.com/api/auth/login", {
+const BASE_URL = "https://cloudcost-analyz.onrender.com";
+
+fetch(`${BASE_URL}/api/auth/login`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
@@ -8,7 +10,7 @@ fetch("https://cloudcost-analyz.onrender.com/api/auth/login", {
   .then((res) => res.json())
   .then((data) => {
     if (data.token) {
-      localStorage.setItem("token", data.token); // or set global state
+      localStorage.setItem("token", data.token);
       alert("✅ Login Successful");
     } else {
       alert(data.message || "❌ Login failed");
