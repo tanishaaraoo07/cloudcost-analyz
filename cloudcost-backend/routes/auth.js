@@ -24,6 +24,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // Login
+// Login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -34,15 +35,19 @@ router.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+    // ✅ Set the token as a cookie here:
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true
+    });
+
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-res.cookie("token", token, {
-  httpOnly: true,
-  sameSite: "None",
-  secure: true
-});
+
 
 module.exports = router;
