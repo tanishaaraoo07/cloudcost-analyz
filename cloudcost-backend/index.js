@@ -30,3 +30,9 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+app.use(cors({
+  origin: "https://cloudcost-analyz-7nre.vercel.app",
+  credentials: true
+}));
+

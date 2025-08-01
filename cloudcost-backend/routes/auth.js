@@ -39,5 +39,10 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+res.cookie("token", token, {
+  httpOnly: true,
+  sameSite: "None",
+  secure: true
+});
 
 module.exports = router;
