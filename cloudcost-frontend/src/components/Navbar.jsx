@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { Navbar, Nav, Container, Button, Modal, Form } from 'react-bootstrap';
 import axios from '../api';
 
+import { login, signup } from '../api';
+
 function TopNavbar() {
   const [showModal, setShowModal] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -24,7 +26,7 @@ function TopNavbar() {
     e.preventDefault();
     try {
       const url = isLoginMode ? '/login' : '/signup';
-      const res = await axios.post(url, authData);
+      const res = isLoginMode ? await login(authData) : await signup(authData);
 
       if (res.data.token) {
         localStorage.setItem('authToken', res.data.token);
