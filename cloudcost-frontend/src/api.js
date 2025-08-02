@@ -1,8 +1,8 @@
-import axios from "axios";
+const BASE_URL = import.meta.env.VITE_REACT_APP_BASE_URL;
 
 // 🔐 Auth API instance (login/signup)
 export const authApi = axios.create({
-  baseURL: "https://cloudcost-analyz.onrender.com/api/auth",
+  baseURL: `${BASE_URL}/api/auth`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"
@@ -11,7 +11,7 @@ export const authApi = axios.create({
 
 // ☁️ Cloud API instance (compare, mapping, discover, report)
 export const cloudApi = axios.create({
-  baseURL: "http://localhost:5000/api/cloud", // ⬅️ Change to Render URL when deployed
+  baseURL: `${BASE_URL}/api/cloud`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"
