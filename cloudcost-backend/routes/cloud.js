@@ -1,10 +1,13 @@
-// routes/cloud.js
 const express = require("express");
 const router = express.Router();
 
 const { compareCosts } = require("../services/compare");
+const { mapServices } = require("../services/mapping");
+const { discoverResources } = require("../services/discover");
+const { generatePdfReport } = require("../services/pdfGenerator");
+const fs = require("fs");
 
-// POST /api/cloud/compare
+// ✅ POST /api/cloud/compare
 router.post("/compare", (req, res) => {
   const { provider, resources } = req.body;
 
@@ -17,11 +20,7 @@ router.post("/compare", (req, res) => {
   res.json({ result });
 });
 
-module.exports = router;
-
-const { mapServices } = require("../services/mapping");
-
-// POST /api/cloud/mapping
+// ✅ POST /api/cloud/mapping
 router.post("/mapping", (req, res) => {
   const { provider, services } = req.body;
 
@@ -33,10 +32,7 @@ router.post("/mapping", (req, res) => {
   res.json({ mapped });
 });
 
-
-const { discoverResources } = require("../services/discover");
-
-// POST /api/cloud/discover
+// ✅ POST /api/cloud/discover
 router.post("/discover", (req, res) => {
   const { provider } = req.body;
 
@@ -48,10 +44,7 @@ router.post("/discover", (req, res) => {
   res.json({ discovered });
 });
 
-
-const { generatePdfReport } = require("../services/pdfGenerator");
-const fs = require("fs");
-
+// ✅ POST /api/cloud/report
 router.post("/report", (req, res) => {
   const { discovered, mapped, comparison } = req.body;
 
@@ -62,12 +55,14 @@ router.post("/report", (req, res) => {
   const filename = `CloudCost-Report-${Date.now()}.pdf`;
   const outputPath = `./reports/${filename}`;
 
-  // Ensure reports folder exists
   if (!fs.existsSync("reports")) fs.mkdirSync("reports");
 
   generatePdfReport({ discovered, mapped, comparison }, outputPath);
 
   setTimeout(() => {
     res.download(outputPath);
-  }, 1000); // short delay to allow file write
+  }, 1000);
 });
+
+// ✅ Move this to the end
+module.exports = router;
