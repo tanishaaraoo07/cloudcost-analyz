@@ -15,7 +15,7 @@ app.use(cookieParser());
 
 // ✅ CORS Setup: allow localhost + production
 const allowedOrigins = [
-  "http://localhost:5173",
+  //"http://localhost:5173",
   "https://cloudcost-analyz-7nre.vercel.app"
 ];
 
