@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { cloudApi } from "../api";
 
 export default function ServiceMapping() {
   const [provider, setProvider] = useState('AWS');
@@ -17,25 +18,27 @@ export default function ServiceMapping() {
     const resourceList = services.split(',').map(s => s.trim());
 
     try {
-      const res = await fetch("http://localhost:8000/mapping", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, resources: resourceList })
+      const res = await cloudApi.post("/mapping", {
+        provider,
+        services: resourceList
       });
 
-      const data = await res.json();
-      if (data.status === "success") {
-        const formattedMappings = data.mappings.map(item => ({
-          source_service: item.original_service,
-          target_service: item.gcp_equivalent
-        }));
+      const formatted = res.data.mapped.map(item => ({
+        source_service: item.originalService,
+        target_service: item.gcpEquivalent
+      }));
 
-        setMappingResults(formattedMappings);
+      setMappingResults(formatted);
 
-        // Save to localStorage for report
-        localStorage.setItem("mappingResult", JSON.stringify(formattedMappings));
-        console.log("✅ Saved Mapping to localStorage:", formattedMappings);
-      }
+      // Save to localStorage for Report.jsx
+      localStorage.setItem("mappingResult", JSON.stringify(formatted));
+
+      // Also update if cost data exists
+      const existing = JSON.parse(localStorage.getItem("cloudCostData") || "{}");
+      localStorage.setItem("cloudCostData", JSON.stringify({
+        ...existing,
+        mappingSummary: formatted
+      }));
     } catch (err) {
       console.error("Mapping Error:", err);
       alert("❌ Failed to map services.");

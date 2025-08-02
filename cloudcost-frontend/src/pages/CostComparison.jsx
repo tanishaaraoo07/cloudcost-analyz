@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "../api";
+import { cloudApi } from "../api";
 import CostBarChart from "../components/CostBarChart";
 
 export default function CostComparison() {
@@ -29,23 +29,35 @@ export default function CostComparison() {
     setError(null);
 
     try {
-      const response = await axios.post("/compare", {
-        resources: resources.map((r) => ({
-          name: r.type,
-          usage: Number(r.usage),
-          provider: r.provider,
-        })),
+      const provider = resources[0].provider;
+      const simplified = resources.map(r => ({ type: r.type }));
+
+      const response = await cloudApi.post("/compare", {
+        provider,
+        resources: simplified,
       });
 
-      const comparison = response.data.comparison || [];
-      const mapping = response.data.mapping || [];
+      const comparison = response.data.result || [];
 
-      setResults(comparison);
+      // Convert for Report.jsx
+      const formatted = comparison.map(item => ({
+        type: item.resourceType,
+        current_provider: item.provider,
+        current_cost: item.currentCost,
+        gcp_cost: item.gcpCost,
+        aws_cost: item.provider === "AWS" ? item.currentCost : null,
+        azure_cost: item.provider === "Azure" ? item.currentCost : null,
+        savings: item.estimatedSavings,
+      }));
 
-      // Save to localStorage for Report.jsx
-      localStorage.setItem("cloudCostData", JSON.stringify({ costSummary: comparison, mappingSummary: mapping }));
-      localStorage.setItem("comparisonResult", JSON.stringify(comparison));
-      localStorage.setItem("mappingResult", JSON.stringify(mapping));
+      setResults(formatted);
+
+      localStorage.setItem("cloudCostData", JSON.stringify({
+        costSummary: formatted,
+        mappingSummary: [], // mapping added later
+      }));
+
+      localStorage.setItem("comparisonResult", JSON.stringify(formatted));
     } catch (err) {
       setError("Comparison failed");
     } finally {
@@ -61,13 +73,10 @@ export default function CostComparison() {
         {resources.map((res, idx) => (
           <div className="row g-3 mb-3" key={idx}>
             <div className="col-md-4">
-              <select
-                className="form-select"
-                value={res.type}
-                onChange={(e) => handleChange(idx, "type", e.target.value)}
-              >
+              <select className="form-select" value={res.type} onChange={(e) => handleChange(idx, "type", e.target.value)}>
                 <option>EC2</option>
                 <option>S3</option>
+                <option>RDS</option>
                 <option>VM</option>
                 <option>Blob Storage</option>
               </select>
@@ -82,11 +91,7 @@ export default function CostComparison() {
               />
             </div>
             <div className="col-md-4">
-              <select
-                className="form-select"
-                value={res.provider}
-                onChange={(e) => handleChange(idx, "provider", e.target.value)}
-              >
+              <select className="form-select" value={res.provider} onChange={(e) => handleChange(idx, "provider", e.target.value)}>
                 <option>AWS</option>
                 <option>Azure</option>
               </select>
@@ -95,9 +100,7 @@ export default function CostComparison() {
         ))}
 
         <div className="d-flex justify-content-between mb-3">
-          <button className="btn btn-outline-secondary" onClick={handleAdd}>
-            + Add Resource
-          </button>
+          <button className="btn btn-outline-secondary" onClick={handleAdd}>+ Add Resource</button>
           <button className="btn btn-success" onClick={handleCompare} disabled={loading}>
             {loading ? "Comparing..." : "Compare Costs"}
           </button>
@@ -116,7 +119,6 @@ export default function CostComparison() {
               ))}
             </ul>
 
-            {/* Chart */}
             <div className="card p-3 shadow-sm">
               <CostBarChart comparison={results} />
             </div>

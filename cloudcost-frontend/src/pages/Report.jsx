@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "../api";
+import { cloudApi } from "../api";
 import "./report.css";
 
 export default function Report() {
@@ -42,7 +42,7 @@ export default function Report() {
     }
 
     try {
-      const response = await axios.post(
+      const response = await cloudApi.post(
         "/generate-pdf",
         {
           cost_data: costData,

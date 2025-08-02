@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "../api";
+import { cloudApi } from "../api";
 
 export default function Discover() {
   const [provider, setProvider] = useState("AWS");
@@ -23,7 +23,7 @@ export default function Discover() {
     setError(null);
 
     try {
-      const response = await axios.post("/discover", {
+      const response = await cloudApi.post("/discover", {
         provider,
         access_key: accessKey,
         secret_key: secretKey,

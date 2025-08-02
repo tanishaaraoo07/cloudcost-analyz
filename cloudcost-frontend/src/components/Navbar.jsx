@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Navbar, Nav, Container, Button, Modal, Form } from 'react-bootstrap';
-import axios from '../api';
-
-import { login, signup } from '../api';
+import { login, signup } from '../api'; // ✅ Now uses authApi under the hood
 
 function TopNavbar() {
   const [showModal, setShowModal] = useState(false);
@@ -25,8 +23,9 @@ function TopNavbar() {
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = isLoginMode ? '/login' : '/signup';
-      const res = isLoginMode ? await login(authData) : await signup(authData);
+      const res = isLoginMode
+        ? await login(authData)
+        : await signup(authData);
 
       if (res.data.token) {
         localStorage.setItem('authToken', res.data.token);
@@ -72,7 +71,7 @@ function TopNavbar() {
         </Container>
       </Navbar>
 
-      {/* 🔐 Login Modal */}
+      {/* 🔐 Auth Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>{isLoginMode ? 'Login' : 'Sign Up'}</Modal.Title>
@@ -85,6 +84,7 @@ function TopNavbar() {
                 <Form.Control
                   required
                   type="text"
+                  value={authData.name}
                   onChange={(e) => setAuthData({ ...authData, name: e.target.value })}
                 />
               </Form.Group>
@@ -94,6 +94,7 @@ function TopNavbar() {
               <Form.Control
                 required
                 type="email"
+                value={authData.email}
                 onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
               />
             </Form.Group>
@@ -102,6 +103,7 @@ function TopNavbar() {
               <Form.Control
                 required
                 type="password"
+                value={authData.password}
                 onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
               />
             </Form.Group>
