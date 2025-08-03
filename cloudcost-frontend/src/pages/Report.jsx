@@ -67,6 +67,21 @@ export default function Report() {
       <div className="report-card shadow p-4 rounded bg-white">
         <h2 className="mb-4 text-center text-success">Cloud Migration Report</h2>
 
+        {/* Section: Discovery */}
+        <h5>🔍 Discovered Resources:</h5>
+        <ul className="list-group mb-4">
+          {discoveredData.length > 0 ? (
+            discoveredData.map((item, index) => (
+              <li key={index} className="list-group-item">
+                {JSON.stringify(item)}
+              </li>
+            ))
+          ) : (
+            <li className="list-group-item text-muted">No discovery data available</li>
+          )}
+        </ul>
+
+        {/* Section: Cost Comparison */}
         <h5>📊 Cost Comparison Summary:</h5>
         <ul className="list-group mb-3">
           {costData.map((item, index) => (
@@ -82,13 +97,13 @@ export default function Report() {
           {costData
             .filter((i) => i.provider === "AWS")
             .reduce((sum, i) => sum + i.currentCost, 0)
-            .toFixed(2)},{" "}
-          Azure: $
+            .toFixed(2)}{" "}
+          | Azure: $
           {costData
             .filter((i) => i.provider === "Azure")
             .reduce((sum, i) => sum + i.currentCost, 0)
-            .toFixed(2)},{" "}
-          GCP: $
+            .toFixed(2)}{" "}
+          | GCP: $
           {costData.reduce((sum, i) => sum + i.gcpCost, 0).toFixed(2)}
         </strong>
 
@@ -109,7 +124,8 @@ export default function Report() {
           </>
         )}
 
-        <h5 className="mt-4">📘 Service Mappings:</h5>
+        {/* Section: Mappings */}
+        <h5 className="mt-4">🔄 Service Mappings:</h5>
         <ul className="list-group mb-3">
           {mappingData.map((item, index) => (
             <li key={index} className="list-group-item">
