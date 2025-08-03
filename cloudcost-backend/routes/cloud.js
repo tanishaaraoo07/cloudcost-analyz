@@ -3,7 +3,7 @@ const router = express.Router();
 
 // ✅ Service imports
 const { compareCosts } = require("../services/compare");
-const { mapServices } = require("../services/mapping");
+const mapServices = require("../services/mapping"); // ✅ Works with default export
 const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
 

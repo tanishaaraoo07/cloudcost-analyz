@@ -50,3 +50,4 @@ async function generatePdfReport({ discovered, mapped, comparison }, outputPath 
 }
 
 module.exports = { generatePdfReport };
+module.exports = { mapServices }; // ✅ Correct structure
