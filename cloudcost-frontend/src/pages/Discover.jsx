@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { cloudApi } from "../api";
 
-export default function Discover() {
+function Discover() {
   const [provider, setProvider] = useState("AWS");
   const [accessKey, setAccessKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [region, setRegion] = useState("");
-  const [useMock, setUseMock] = useState(false);
+  const [useMock, setUseMock] = useState(true); // ✅ default true for mock
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,7 +31,18 @@ export default function Discover() {
         use_mock: useMock,
       });
 
-      setResources(response.data.resources);
+      const discoveredResources = response.data.discovered || response.data.resources || [];
+
+      setResources(discoveredResources);
+
+      // 🔐 Store in localStorage
+      const prev = JSON.parse(localStorage.getItem("cloudCostData") || "{}");
+      localStorage.setItem("cloudCostData", JSON.stringify({
+        ...prev,
+        discoverSummary: discoveredResources
+      }));
+
+      alert("✅ Discovery completed and saved.");
     } catch (err) {
       console.error("Discovery API Error:", err);
       if (err.response) {
@@ -128,3 +139,5 @@ export default function Discover() {
     </div>
   );
 }
+
+export default Discover;

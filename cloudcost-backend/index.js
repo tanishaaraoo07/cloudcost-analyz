@@ -5,15 +5,10 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Middleware (must be in correct order)
-app.use(express.json());
-app.use(cookieParser());
-
-// ✅ CORS Setup: allow localhost + production
+// ✅ Middleware (CORS first, before JSON parsing if using credentials)
 const allowedOrigins = [
   "http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
@@ -31,13 +26,17 @@ app.use(cors({
   credentials: true
 }));
 
-// ✅ Debug log for every request
+// ✅ Body parser and cookie parser
+app.use(express.json()); // Must come AFTER CORS
+app.use(cookieParser());
+
+// ✅ Debug logger for all requests
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
-// ✅ MongoDB connection
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -45,18 +44,24 @@ mongoose.connect(process.env.MONGO_URL, {
 .then(() => console.log("✅ MongoDB connected"))
 .catch((err) => console.error("❌ Mongo error:", err));
 
-// ✅ API Routes
-app.use("/api/auth", require("./routes/auth"));     // For login/signup
-app.use("/api/cloud", require("./routes/cloud"));   // For compare/discover/pdf
+// ✅ Routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/cloud", require("./routes/cloud"));
 
-// ✅ Health check route
+// ✅ Health check
 app.get("/", (req, res) => {
   res.send("🌐 CloudCost Analyzer Backend Running");
 });
 
-// ✅ Fallback 404 route
+// ✅ 404 fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
+});
+
+// ✅ Global error handler (Optional - to avoid Express crashing on uncaught errors)
+app.use((err, req, res, next) => {
+  console.error("❌ Global error:", err.message);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
 // ✅ Start server

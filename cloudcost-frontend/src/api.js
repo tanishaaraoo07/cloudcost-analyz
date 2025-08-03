@@ -1,28 +1,39 @@
 // src/api.js
 import axios from "axios";
 
-// Auth API instance
+// Base URLs
+const BASE_URL = "https://cloudcost-analyz.onrender.com/api";
+
+// Create Auth API instance
 export const authApi = axios.create({
-  baseURL: "https://cloudcost-analyz.onrender.com/api/auth",
+  baseURL: `${BASE_URL}/auth`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"
   }
 });
 
-// Cloud API instance
+// Create Cloud API instance
 export const cloudApi = axios.create({
-  baseURL: "https://cloudcost-analyz.onrender.com/api/cloud", // ✅ Use Render URL
+  baseURL: `${BASE_URL}/cloud`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"
-  }
+  },
+  timeout: 10000 // optional: 10s timeout for slow APIs
 });
 
-// Export API methods
+// Export auth API calls
 export const login = (data) => authApi.post("/login", data);
 export const signup = (data) => authApi.post("/signup", data);
-export const compare = (data) => cloudApi.post("/compare", data);
+
+// Export cloud API calls
 export const discover = (data) => cloudApi.post("/discover", data);
 export const map = (data) => cloudApi.post("/mapping", data);
-export const downloadReport = (data) => cloudApi.post("/report", data, { responseType: "blob" });
+export const compare = (data) => cloudApi.post("/compare", data);
+
+// PDF download (as Blob)
+export const downloadReport = (data) =>
+  cloudApi.post("/report", data, {
+    responseType: "blob"
+  });

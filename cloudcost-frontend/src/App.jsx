@@ -22,15 +22,15 @@ function App() {
       <TopNavbar />
       <div className="d-flex flex-column min-vh-100">
         <main className="flex-grow-1 px-0" style={{ width: '100%', margin: 0, padding: 0 }}>
-  <Routes>
-    <Route path="/" element={<Home />} />
-    <Route path="/explore" element={<Explore />} />
-    <Route path="/discover" element={<Discover />} />
-    <Route path="/compare" element={<CostComparison />} />
-    <Route path="/mapping" element={<ServiceMapping />} />
-    <Route path="/report" element={<Report />} />
-  </Routes>
-</main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/compare" element={<CostComparison />} />
+            <Route path="/mapping" element={<ServiceMapping />} />
+            <Route path="/report" element={<Report />} />
+          </Routes>
+        </main>
         <Footer />
       </div>
     </Router>

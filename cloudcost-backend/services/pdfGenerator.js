@@ -1,35 +1,43 @@
-// services/pdfGenerator.js
 const PDFDocument = require("pdfkit");
-const fs = require("fs");
+const getStream = require("get-stream");
 
-function generatePdfReport({ discovered, mapped, comparison }, outputPath = "report.pdf") {
-  const doc = new PDFDocument();
-  doc.pipe(fs.createWriteStream(outputPath));
+async function generatePdfReport({ discovered, mapped, comparison }) {
+  const doc = new PDFDocument({ margin: 50 });
 
-  doc.fontSize(18).text("☁️ Cloud Cost Analyzer Report", { align: "center" });
-  doc.moveDown();
+  let buffers = [];
+  doc.on("data", buffers.push.bind(buffers));
+  doc.on("end", () => {});
 
-  // Section 1: Discovered Resources
-  doc.fontSize(14).text("🔍 Discovered Resources:");
-  discovered.forEach((res, index) => {
-    doc.fontSize(12).text(`${index + 1}. ${JSON.stringify(res)}`);
+  doc.font("Helvetica-Bold").fontSize(18).text("Cloud Cost Analyzer Report", { align: "center" });
+  doc.moveDown(1.5);
+
+  doc.font("Helvetica-Bold").fontSize(14).text("Discovered Resources");
+  doc.moveDown(0.5);
+  (discovered || []).forEach((res, idx) => {
+    doc.font("Helvetica").fontSize(11).text(`${idx + 1}. ${JSON.stringify(res)}`, { indent: 20 });
   });
-  doc.moveDown();
+  doc.moveDown(1.5);
 
-  // Section 2: GCP Mappings
-  doc.fontSize(14).text("🔄 GCP Equivalent Services:");
-  mapped.forEach((item, index) => {
-    doc.fontSize(12).text(`${index + 1}. ${item.originalService} → ${item.gcpEquivalent}`);
+  doc.font("Helvetica-Bold").fontSize(14).text("GCP Service Mappings");
+  doc.moveDown(0.5);
+  (mapped || []).forEach((m, idx) => {
+    doc.font("Helvetica").fontSize(11).text(`${idx + 1}. ${m.originalService} → ${m.gcpEquivalent}`, { indent: 20 });
   });
-  doc.moveDown();
+  doc.moveDown(1.5);
 
-  // Section 3: Cost Comparison
-  doc.fontSize(14).text("💰 Cost Comparison:");
-  comparison.forEach((item, index) => {
-    doc.fontSize(12).text(`${index + 1}. ${item.resourceType} | ${item.provider}: $${item.currentCost} → GCP: $${item.gcpCost} | Savings: $${item.estimatedSavings}`);
+  doc.font("Helvetica-Bold").fontSize(14).text("Cost Comparison");
+  doc.moveDown(0.5);
+  (comparison || []).forEach((item, idx) => {
+    const { resourceType, provider, currentCost, gcpCost, estimatedSavings } = item;
+    doc.font("Helvetica").fontSize(11).text(
+      `${idx + 1}. ${resourceType} (${provider}) - $${currentCost} → GCP: $${gcpCost} | Savings: $${estimatedSavings}`,
+      { indent: 20 }
+    );
   });
 
   doc.end();
+
+  return getStream.buffer(doc);
 }
 
 module.exports = { generatePdfReport };
