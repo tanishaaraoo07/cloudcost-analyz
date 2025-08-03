@@ -29,10 +29,19 @@ router.post("/compare", async (req, res) => {
 // ✅ POST /api/cloud/mapping
 router.post("/mapping", (req, res) => {
   try {
-    const { provider, services } = req.body;
+    let { provider, services } = req.body;
 
-    if (!provider || !Array.isArray(services)) {
-      return res.status(400).json({ error: "Missing or invalid provider/services" });
+    if (!provider || !services) {
+      return res.status(400).json({ error: "Missing provider or services" });
+    }
+
+    // If services are objects, extract type names
+    if (Array.isArray(services) && typeof services[0] === "object") {
+      services = services.map((s) => s.type || s.service || s.name || "Unknown");
+    }
+
+    if (!Array.isArray(services) || services.length === 0) {
+      return res.status(400).json({ error: "Invalid or empty services list" });
     }
 
     const mapped = mapServices(provider, services);
@@ -42,6 +51,7 @@ router.post("/mapping", (req, res) => {
     res.status(500).json({ error: "Mapping failed" });
   }
 });
+
 
 // ✅ POST /api/cloud/discover
 router.post("/discover", (req, res) => {
