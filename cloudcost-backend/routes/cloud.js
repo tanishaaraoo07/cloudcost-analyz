@@ -1,19 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const fs = require("fs");
-const path = require("path");
 
+// ✅ Service imports
 const { compareCosts } = require("../services/compare");
 const { mapServices } = require("../services/mapping");
 const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
 
-// POST /api/cloud/compare
+// ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res) => {
   try {
     const { provider, resources } = req.body;
 
-    if (!provider || !resources || !Array.isArray(resources)) {
+    if (!provider || !Array.isArray(resources)) {
       return res.status(400).json({ error: "Missing or invalid provider/resources" });
     }
 
@@ -22,20 +21,20 @@ router.post("/compare", async (req, res) => {
 
     return res.status(200).json({ result });
   } catch (err) {
-    console.error("Error in /compare:", err);
+    console.error("❌ Error in /compare:", err.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// POST /api/cloud/mapping
+// ✅ POST /api/cloud/mapping
 router.post("/mapping", (req, res) => {
-  const { provider, services } = req.body;
-
-  if (!provider || !services || !Array.isArray(services)) {
-    return res.status(400).json({ error: "Missing or invalid provider/services" });
-  }
-
   try {
+    const { provider, services } = req.body;
+
+    if (!provider || !Array.isArray(services)) {
+      return res.status(400).json({ error: "Missing or invalid provider/services" });
+    }
+
     const mapped = mapServices(provider, services);
     res.json({ mapped });
   } catch (err) {
@@ -44,17 +43,15 @@ router.post("/mapping", (req, res) => {
   }
 });
 
-// POST /api/cloud/discover
-const { discoverResources } = require("../services/discover");
-
+// ✅ POST /api/cloud/discover
 router.post("/discover", (req, res) => {
-  const { provider, use_mock = true } = req.body;
-
-  if (!provider) {
-    return res.status(400).json({ error: "Provider is required" });
-  }
-
   try {
+    const { provider, use_mock = true } = req.body;
+
+    if (!provider) {
+      return res.status(400).json({ error: "Provider is required" });
+    }
+
     const discovered = discoverResources(provider, use_mock);
     res.json({ discovered });
   } catch (err) {
@@ -63,16 +60,15 @@ router.post("/discover", (req, res) => {
   }
 });
 
-// POST /api/cloud/report
-
+// ✅ POST /api/cloud/report
 router.post("/report", async (req, res) => {
-  const { discovered, mapped, comparison } = req.body;
-
-  if (!discovered || !mapped || !comparison) {
-    return res.status(400).json({ error: "Missing data for PDF report" });
-  }
-
   try {
+    const { discovered, mapped, comparison } = req.body;
+
+    if (!discovered || !mapped || !comparison) {
+      return res.status(400).json({ error: "Missing data for PDF report" });
+    }
+
     const pdfBuffer = await generatePdfReport({ discovered, mapped, comparison });
 
     res.set({
@@ -88,3 +84,4 @@ router.post("/report", async (req, res) => {
   }
 });
 
+module.exports = router;
