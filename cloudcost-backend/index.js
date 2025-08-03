@@ -5,10 +5,11 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Middleware (CORS first, before JSON parsing if using credentials)
+// ✅ 1. CORS Setup FIRST
 const allowedOrigins = [
   "http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
@@ -23,48 +24,50 @@ app.use(cors({
       callback(new Error("CORS error: " + origin));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// ✅ Body parser and cookie parser
-app.use(express.json()); // Must come AFTER CORS
+// ✅ 2. JSON and Cookie Parsing
+app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Debug logger for all requests
+// ✅ 3. Debug Log Middleware
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
-// ✅ MongoDB Connection
+// ✅ 4. MongoDB Connection
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 })
 .then(() => console.log("✅ MongoDB connected"))
-.catch((err) => console.error("❌ Mongo error:", err));
+.catch((err) => console.error("❌ MongoDB error:", err));
 
-// ✅ Routes
+// ✅ 5. API Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/cloud", require("./routes/cloud"));
 
-// ✅ Health check
+// ✅ 6. Health Check
 app.get("/", (req, res) => {
   res.send("🌐 CloudCost Analyzer Backend Running");
 });
 
-// ✅ 404 fallback
+// ✅ 7. 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ✅ Global error handler (Optional - to avoid Express crashing on uncaught errors)
+// ✅ 8. Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("❌ Global error:", err.message);
+  console.error("❌ Global error:", err.stack || err.message);
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-// ✅ Start server
+// ✅ 9. Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
