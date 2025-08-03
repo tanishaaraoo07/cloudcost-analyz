@@ -28,44 +28,43 @@ router.post("/compare", async (req, res) => {
 });
 
 // POST /api/cloud/mapping
-router.post("/mapping", async (req, res) => {
+router.post("/mapping", (req, res) => {
+  const { provider, services } = req.body;
+
+  if (!provider || !services || !Array.isArray(services)) {
+    return res.status(400).json({ error: "Missing or invalid provider/services" });
+  }
+
   try {
-    const { provider, services } = req.body;
-
-    if (!provider || !services || !Array.isArray(services)) {
-      return res.status(400).json({ error: "Missing or invalid provider/services" });
-    }
-
-    const mapped = await mapServices(provider, services);
-    console.log("[/mapping] Mapped Services:", mapped);
-
-    return res.status(200).json({ mapped });
+    const mapped = mapServices(provider, services);
+    res.json({ mapped });
   } catch (err) {
-    console.error("Error in /mapping:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Mapping error:", err.message);
+    res.status(500).json({ error: "Mapping failed" });
   }
 });
 
 // POST /api/cloud/discover
-router.post("/discover", async (req, res) => {
+const { discoverResources } = require("../services/discover");
+
+router.post("/discover", (req, res) => {
+  const { provider, use_mock = true } = req.body;
+
+  if (!provider) {
+    return res.status(400).json({ error: "Provider is required" });
+  }
+
   try {
-    const { provider } = req.body;
-
-    if (!provider) {
-      return res.status(400).json({ error: "Provider is required" });
-    }
-
-const discovered = discoverResources(provider, req.body.use_mock || false);
-    console.log("[/discover] Discovered Resources:", discovered);
-
-    return res.status(200).json({ discovered });
+    const discovered = discoverResources(provider, use_mock);
+    res.json({ discovered });
   } catch (err) {
-    console.error("Error in /discover:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Discover error:", err.message);
+    res.status(500).json({ error: "Discovery failed" });
   }
 });
 
 // POST /api/cloud/report
+
 router.post("/report", async (req, res) => {
   const { discovered, mapped, comparison } = req.body;
 
@@ -75,16 +74,17 @@ router.post("/report", async (req, res) => {
 
   try {
     const pdfBuffer = await generatePdfReport({ discovered, mapped, comparison });
+
     res.set({
       "Content-Type": "application/pdf",
       "Content-Disposition": "attachment; filename=CloudCost-Report.pdf",
       "Content-Length": pdfBuffer.length,
     });
-    return res.send(pdfBuffer);
+
+    res.send(pdfBuffer);
   } catch (err) {
-    console.error("❌ PDF Generation Error:", err);
+    console.error("❌ PDF error:", err.message);
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
-module.exports = router;
