@@ -36,9 +36,9 @@ export default function Report() {
 
     const formattedMap = rawMap.map((m) => ({
       originalService:
-        m.originalService || m.original_service || m.source_service || "Unknown",
+        m.originalService || m.source_service || m.source || "Unknown",
       gcpEquivalent:
-        m.gcpEquivalent || m.gcp_equivalent || m.target_service || "Unknown",
+        m.gcpEquivalent || m.target_service || m.target || "Unknown",
     }));
 
     setCostData(formattedCost);
@@ -86,8 +86,7 @@ export default function Report() {
         <ul className="list-group mb-3">
           {costData.map((item, index) => (
             <li key={index} className="list-group-item">
-              {item.resourceType} → {item.provider}: ${item.currentCost} | GCP: $
-              {item.gcpCost} | Savings: ${item.estimatedSavings}
+              {item.resourceType} → {item.provider}: ${item.currentCost} | GCP: ${item.gcpCost} | Savings: ${item.estimatedSavings}
             </li>
           ))}
         </ul>
@@ -127,11 +126,15 @@ export default function Report() {
         {/* Section: Mappings */}
         <h5 className="mt-4">🔄 Service Mappings:</h5>
         <ul className="list-group mb-3">
-          {mappingData.map((item, index) => (
-            <li key={index} className="list-group-item">
-              {item.originalService} → {item.gcpEquivalent}
-            </li>
-          ))}
+          {mappingData.length > 0 ? (
+            mappingData.map((item, index) => (
+              <li key={index} className="list-group-item">
+                {item.originalService} → {item.gcpEquivalent}
+              </li>
+            ))
+          ) : (
+            <li className="list-group-item text-muted">No service mapping available</li>
+          )}
         </ul>
 
         <button className="btn btn-success w-100 mt-3" onClick={downloadPDF}>

@@ -38,9 +38,10 @@ function Discover() {
       // 🔐 Store in localStorage
       const prev = JSON.parse(localStorage.getItem("cloudCostData") || "{}");
       localStorage.setItem("cloudCostData", JSON.stringify({
-        ...prev,
-        discoverSummary: discoveredResources
-      }));
+  ...prev,
+  discoverSummary: discoveredResources
+}));
+
 
       alert("✅ Discovery completed and saved.");
     } catch (err) {
