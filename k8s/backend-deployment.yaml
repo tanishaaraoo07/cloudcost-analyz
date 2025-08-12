@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudcost-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudcost-backend
+  template:
+    metadata:
+      labels:
+        app: cloudcost-backend
+    spec:
+      containers:
+      - name: backend
+        image: your-dockerhub-username/cloudcost-backend:latest
+        ports:
+        - containerPort: 8000

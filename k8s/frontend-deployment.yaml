@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudcost-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudcost-frontend
+  template:
+    metadata:
+      labels:
+        app: cloudcost-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: your-dockerhub-username/cloudcost-frontend:latest
+        ports:
+        - containerPort: 3000
