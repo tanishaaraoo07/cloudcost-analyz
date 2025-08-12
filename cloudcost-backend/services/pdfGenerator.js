@@ -1,113 +1,110 @@
+// services/pdfGenerator.js
 const PDFDocument = require("pdfkit");
 const getStream = require("get-stream");
 
-async function generatePdfReport({ discovered = [], mapped = [], comparison = [], chartImageBase64 }) {
-  const doc = new PDFDocument({ margin: 50 });
+/**
+ * Generates a PDF report for Cloud Cost Analyzer
+ * @param {Object} data
+ * @param {Array} data.discovered - Discovered resources list
+ * @param {Array} data.mapped - Mapped service list
+ * @param {Array} data.comparison - Cost comparison list
+ * @param {String} data.chartImageBase64 - Base64 chart image
+ * @returns {Buffer} PDF buffer
+ */
+async function generatePdfReport({ discovered = [], mapped = [], comparison = [], chartImageBase64 = null }) {
+  const doc = new PDFDocument({ margin: 40 });
+
   const buffers = [];
   doc.on("data", buffers.push.bind(buffers));
+  doc.on("end", () => {});
 
-  // Title
-  doc.font("Helvetica-Bold").fontSize(20).fillColor("#333333")
-    .text("Cloud Cost Analyzer Report", { align: "center" });
+  // ===== TITLE =====
+  doc.font("Helvetica-Bold").fontSize(22).fillColor("#2E4053")
+    .text("📄 Cloud Cost Analyzer Report", { align: "center" });
   doc.moveDown(2);
 
-  // 1️⃣ Chart Image (optional)
+  // ===== SECTION 1: Discovered Resources =====
+  if (discovered.length > 0) {
+    doc.font("Helvetica-Bold").fontSize(16).fillColor("#000000").text("1️⃣ Discovered Resources");
+    doc.moveDown(0.5);
+
+    // Table headers
+    doc.font("Helvetica-Bold").fontSize(12);
+    doc.text("Type", 50, doc.y, { continued: true });
+    doc.text("Details", 150);
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+
+    // Table rows
+    doc.font("Helvetica").fontSize(11).fillColor("#444444");
+    discovered.forEach((res) => {
+      doc.text(res.type || "-", 50, doc.y, { continued: true });
+      doc.text(JSON.stringify(res), 150);
+    });
+    doc.moveDown(1.5);
+  }
+
+  // ===== SECTION 2: Service Mappings =====
+  if (mapped.length > 0) {
+    doc.font("Helvetica-Bold").fontSize(16).fillColor("#000000").text("2️⃣ GCP Service Mappings");
+    doc.moveDown(0.5);
+
+    doc.font("Helvetica-Bold").fontSize(12);
+    doc.text("Source Service", 50, doc.y, { continued: true });
+    doc.text("GCP Equivalent", 200);
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+
+    doc.font("Helvetica").fontSize(11).fillColor("#444444");
+    mapped.forEach((m) => {
+      doc.text(m.originalService || "-", 50, doc.y, { continued: true });
+      doc.text(m.gcpEquivalent || "-", 200);
+    });
+    doc.moveDown(1.5);
+  }
+
+  // ===== SECTION 3: Cost Comparison =====
+  if (comparison.length > 0) {
+    doc.font("Helvetica-Bold").fontSize(16).fillColor("#000000").text("3️⃣ Cost Comparison");
+    doc.moveDown(0.5);
+
+    doc.font("Helvetica-Bold").fontSize(12);
+    doc.text("Resource", 50, doc.y, { continued: true });
+    doc.text("Provider", 200, { continued: true });
+    doc.text("Current ($)", 300, { continued: true });
+    doc.text("GCP ($)", 380, { continued: true });
+    doc.text("Savings ($)", 460);
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+
+    doc.font("Helvetica").fontSize(11).fillColor("#444444");
+    comparison.forEach((item) => {
+      doc.text(item.resourceType || "-", 50, doc.y, { continued: true });
+      doc.text(item.provider || "-", 200, { continued: true });
+      doc.text(item.currentCost?.toFixed(2) || "0", 300, { continued: true });
+      doc.text(item.gcpCost?.toFixed(2) || "0", 380, { continued: true });
+      doc.text(item.estimatedSavings?.toFixed(2) || "0", 460);
+    });
+    doc.moveDown(1.5);
+  }
+
+  // ===== SECTION 4: Chart =====
   if (chartImageBase64) {
     try {
       const chartBuffer = Buffer.from(chartImageBase64, "base64");
-      doc.image(chartBuffer, { fit: [450, 300], align: "center" });
-      doc.moveDown(1.5);
-    } catch (err) {
-      console.error("⚠️ Chart embed error:", err.message);
+      doc.addPage();
+      doc.font("Helvetica-Bold").fontSize(16).fillColor("#000000").text("📉 Cost Comparison Chart", { align: "center" });
+      doc.moveDown(1);
+      doc.image(chartBuffer, { fit: [500, 300], align: "center", valign: "center" });
+    } catch (error) {
+      console.error("⚠️ Failed to embed chart:", error.message);
     }
   }
 
-  // 2️⃣ Discovered Resources Table
-  if (discovered.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).text("1. Discovered Resources");
-    doc.moveDown(0.5);
-
-    // Header
-    doc.font("Helvetica-Bold").fontSize(11)
-      .text("Service Type", 50, doc.y, { continued: true })
-      .text("Identifier / Name", 180, { continued: true })
-      .text("Extra Info", 350);
-    doc.moveDown(0.2);
-
-    // Rows
-    discovered.forEach((res) => {
-      const type = res.type || "N/A";
-      const idOrName = res.id || res.bucket || res.db || "—";
-      const extra = res.region || res.zone || "";
-
-      doc.font("Helvetica").fontSize(10)
-        .text(type, 50, doc.y, { continued: true })
-        .text(idOrName, 180, { continued: true })
-        .text(extra, 350);
-    });
-
-    doc.moveDown(1.5);
-  }
-
-  // 3️⃣ GCP Service Mappings Table
-  if (mapped.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).text("2. GCP Service Mappings");
-    doc.moveDown(0.5);
-
-    // Header
-    doc.font("Helvetica-Bold").fontSize(11)
-      .text("Original Service", 50, doc.y, { continued: true })
-      .text("GCP Equivalent", 250);
-    doc.moveDown(0.2);
-
-    // Rows
-    mapped.forEach((m) => {
-      doc.font("Helvetica").fontSize(10)
-        .text(m.originalService || "N/A", 50, doc.y, { continued: true })
-        .text(m.gcpEquivalent || "N/A", 250);
-    });
-
-    doc.moveDown(1.5);
-  }
-
-  // 4️⃣ Cost Comparison Table
-  if (comparison.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).text("3. Cost Comparison");
-    doc.moveDown(0.5);
-
-    // Header
-    doc.font("Helvetica-Bold").fontSize(11)
-      .text("Service", 50, doc.y, { continued: true })
-      .text("Current Cost", 200, { continued: true })
-      .text("GCP Cost", 300, { continued: true })
-      .text("Savings", 400);
-    doc.moveDown(0.2);
-
-    // Rows
-    comparison.forEach((item) => {
-      doc.font("Helvetica").fontSize(10)
-        .text(item.resourceType || "N/A", 50, doc.y, { continued: true })
-        .text(`$${item.currentCost}`, 200, { continued: true })
-        .text(`$${item.gcpCost}`, 300, { continued: true })
-        .text(`$${item.estimatedSavings}`, 400);
-    });
-
-    // Totals row
-    const totalAWS = comparison
-      .filter((i) => i.provider === "AWS")
-      .reduce((sum, i) => sum + i.currentCost, 0);
-
-    const totalAzure = comparison
-      .filter((i) => i.provider === "Azure")
-      .reduce((sum, i) => sum + i.currentCost, 0);
-
-    const totalGCP = comparison.reduce((sum, i) => sum + i.gcpCost, 0);
-
-    doc.moveDown(0.5);
-    doc.font("Helvetica-Bold").fontSize(11)
-      .text("TOTAL →", 50, doc.y, { continued: true })
-      .text(`AWS: $${totalAWS.toFixed(2)} | Azure: $${totalAzure.toFixed(2)} | GCP: $${totalGCP.toFixed(2)}`, 200);
-  }
+  // ===== FOOTER =====
+  doc.moveDown(2);
+  doc.font("Helvetica-Oblique").fontSize(10).fillColor("#888888")
+    .text(`Generated on: ${new Date().toLocaleString()}`, { align: "right" });
 
   doc.end();
   return getStream.buffer(doc);

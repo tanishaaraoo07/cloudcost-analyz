@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { downloadReport } from "../api";
+import axios from "axios";
 import { saveAs } from "file-saver";
 import html2canvas from "html2canvas";
 import {
@@ -13,6 +13,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./report.css";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "https://cloudcost-analyz.onrender.com";
 
 export default function Report() {
   const [costData, setCostData] = useState([]);
@@ -55,21 +57,26 @@ export default function Report() {
     }
 
     try {
-      // Capture chart as image
+      // Capture chart as Base64 image
       let chartImageBase64 = null;
       if (chartRef.current) {
         const canvas = await html2canvas(chartRef.current);
-        chartImageBase64 = canvas.toDataURL("image/png").split(",")[1]; // remove data:image/png;base64,
+        chartImageBase64 = canvas.toDataURL("image/png").split(",")[1]; // remove header
       }
 
-      // Send data to backend
-      const response = await downloadReport({
-        discovered: discoveredData,
-        mapped: mappingData,
-        comparison: costData,
-        chartImageBase64
-      });
+      // Request backend for PDF
+      const response = await axios.post(
+        `${BASE_URL}/api/cloud/report`,
+        {
+          discovered: discoveredData,
+          mapped: mappingData,
+          comparison: costData,
+          chartImageBase64,
+        },
+        { responseType: "arraybuffer" }
+      );
 
+      // Save file
       const blob = new Blob([response.data], { type: "application/pdf" });
       saveAs(blob, `CloudCost-Report-${Date.now()}.pdf`);
     } catch (err) {
@@ -83,7 +90,7 @@ export default function Report() {
       <div className="report-card shadow p-4 rounded bg-white">
         <h2 className="mb-4 text-center text-success">Cloud Migration Report</h2>
 
-        {/* Section: Discovery */}
+        {/* Discovery Section */}
         <h5>🔍 Discovered Resources:</h5>
         <ul className="list-group mb-4">
           {discoveredData.length > 0 ? (
@@ -97,7 +104,7 @@ export default function Report() {
           )}
         </ul>
 
-        {/* Section: Cost Comparison */}
+        {/* Cost Comparison Section */}
         <h5>📊 Cost Comparison Summary:</h5>
         <ul className="list-group mb-3">
           {costData.map((item, index) => (
@@ -122,6 +129,7 @@ export default function Report() {
           {costData.reduce((sum, i) => sum + i.gcpCost, 0).toFixed(2)}
         </strong>
 
+        {/* Chart */}
         {costData.length > 0 && (
           <>
             <h5 className="mt-4 text-info">📉 Cost Comparison Chart</h5>
@@ -141,7 +149,7 @@ export default function Report() {
           </>
         )}
 
-        {/* Section: Mappings */}
+        {/* Mappings */}
         <h5 className="mt-4">🔄 Service Mappings:</h5>
         <ul className="list-group mb-3">
           {mappingData.length > 0 ? (
@@ -155,6 +163,7 @@ export default function Report() {
           )}
         </ul>
 
+        {/* Download Button */}
         <button className="btn btn-success w-100 mt-3" onClick={downloadPDF}>
           📄 Download PDF Report
         </button>
