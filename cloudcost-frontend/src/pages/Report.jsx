@@ -47,20 +47,24 @@ export default function Report() {
   }, []);
 
   const downloadPDF = async () => {
-    try {
-      const response = await downloadReport({
-        discovered: discoveredData,
-        mapped: mappingData,
-        comparison: costData,
-      });
+  if (!discoveredData.length || !mappingData.length || !costData.length) {
+    alert("⚠️ Some sections are empty. Please run discovery, mapping, and cost comparison first.");
+    return;
+  }
+  try {
+    const response = await downloadReport({
+      discovered: discoveredData,
+      mapped: mappingData,
+      comparison: costData,
+    });
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    saveAs(blob, `CloudCost-Report-${Date.now()}.pdf`);
+  } catch (err) {
+    console.error("❌ PDF Download Error:", err);
+    alert("Failed to generate or download PDF.");
+  }
+};
 
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      saveAs(blob, `CloudCost-Report-${Date.now()}.pdf`);
-    } catch (err) {
-      console.error("❌ PDF Download Error:", err);
-      alert("Failed to generate or download PDF.");
-    }
-  };
 
   return (
     <div className="report-wrapper px-4 py-5">

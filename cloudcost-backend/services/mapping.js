@@ -1,43 +1,30 @@
-// services/mapping.js
-
-const mappingTable = {
-  AWS: {
-    EC2: "Compute Engine",
-    S3: "Cloud Storage",
-    RDS: "Cloud SQL",
-  },
-  Azure: {
-    VM: "Compute Engine",
-    "Blob Storage": "Cloud Storage",
-    "SQL Database": "Cloud SQL",
-  },
-};
-
-function mapServices(provider, services) {
-  if (!mappingTable[provider]) {
-    console.warn(`[Mapping] Unsupported provider: ${provider}`);
-    return [];
-  }
-
-  if (!Array.isArray(services)) {
-    console.warn("[Mapping] Services should be an array.");
-    return [];
-  }
-
-  const providerMap = mappingTable[provider];
-
-  return services.map((service) => {
-    const gcpEquivalent = providerMap[service] || "Not Found";
-    if (gcpEquivalent === "Not Found") {
-      console.warn(`[Mapping] No GCP equivalent found for ${service} from ${provider}`);
+// services/mapping.js - CommonJS format
+function mapServices(provider, resources) {
+  const mappings = {
+    AWS: {
+      EC2: "Virtual Machines",
+      S3: "Storage",
+      RDS: "Databases"
+    },
+    Azure: {
+      VM: "Virtual Machines",
+      Blob: "Storage",
+      SQL: "Databases"
     }
+  };
+
+  // Always return format the frontend expects
+  return resources.map((resource) => {
+    const type =
+      typeof resource === "string"
+        ? resource
+        : resource.type || resource.service || resource.name || "Unknown";
 
     return {
-      originalService: service,
-      gcpEquivalent,
+      originalService: type,
+      gcpEquivalent: mappings[provider]?.[type] || "Unmapped Service"
     };
   });
 }
 
-// ✅ Export properly
 module.exports = { mapServices };

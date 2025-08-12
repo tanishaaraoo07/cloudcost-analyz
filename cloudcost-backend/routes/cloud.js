@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-// ✅ Service imports
 const { compareCosts } = require("../services/compare");
-const mapServices = require("../services/mapping"); // ✅ Works with default export
+const { mapServices } = require("../services/mapping"); // ✅ FIXED
 const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
 
@@ -11,14 +10,10 @@ const { generatePdfReport } = require("../services/pdfGenerator");
 router.post("/compare", async (req, res) => {
   try {
     const { provider, resources } = req.body;
-
     if (!provider || !Array.isArray(resources)) {
       return res.status(400).json({ error: "Missing or invalid provider/resources" });
     }
-
     const result = await compareCosts(provider, resources);
-    console.log("[/compare] Comparison Result:", result);
-
     return res.status(200).json({ result });
   } catch (err) {
     console.error("❌ Error in /compare:", err.message);
@@ -26,18 +21,21 @@ router.post("/compare", async (req, res) => {
   }
 });
 
+
 // ✅ POST /api/cloud/mapping
 router.post("/mapping", (req, res) => {
   try {
+    console.log("📩 Incoming mapping request body:", req.body);
+
     let { provider, services } = req.body;
 
     if (!provider || !services) {
       return res.status(400).json({ error: "Missing provider or services" });
     }
 
-    // If services are objects, extract type names
-    if (Array.isArray(services) && typeof services[0] === "object") {
-      services = services.map((s) => s.type || s.service || s.name || "Unknown");
+    // Ensure array format
+    if (typeof services === "string") {
+      services = services.split(",").map((s) => s.trim()).filter(Boolean);
     }
 
     if (!Array.isArray(services) || services.length === 0) {
@@ -45,23 +43,25 @@ router.post("/mapping", (req, res) => {
     }
 
     const mapped = mapServices(provider, services);
+    console.log("✅ Mapped services:", mapped);
+
     res.json({ mapped });
   } catch (err) {
-    console.error("❌ Mapping error:", err.message);
-    res.status(500).json({ error: "Mapping failed" });
+    console.error("❌ Mapping error:", err);
+    res.status(500).json({ error: "Mapping failed", details: err.message });
   }
 });
+
+
 
 
 // ✅ POST /api/cloud/discover
 router.post("/discover", (req, res) => {
   try {
     const { provider, use_mock = true } = req.body;
-
     if (!provider) {
       return res.status(400).json({ error: "Provider is required" });
     }
-
     const discovered = discoverResources(provider, use_mock);
     res.json({ discovered });
   } catch (err) {
@@ -74,19 +74,15 @@ router.post("/discover", (req, res) => {
 router.post("/report", async (req, res) => {
   try {
     const { discovered, mapped, comparison } = req.body;
-
     if (!discovered || !mapped || !comparison) {
       return res.status(400).json({ error: "Missing data for PDF report" });
     }
-
     const pdfBuffer = await generatePdfReport({ discovered, mapped, comparison });
-
     res.set({
       "Content-Type": "application/pdf",
       "Content-Disposition": "attachment; filename=CloudCost-Report.pdf",
       "Content-Length": pdfBuffer.length,
     });
-
     res.send(pdfBuffer);
   } catch (err) {
     console.error("❌ PDF error:", err.message);

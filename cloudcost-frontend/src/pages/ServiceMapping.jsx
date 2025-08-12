@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { cloudApi } from "../api";
 
 export default function ServiceMapping() {
-  const [provider, setProvider] = useState('AWS');
-  const [services, setServices] = useState('');
+  const [provider, setProvider] = useState("AWS");
+  const [services, setServices] = useState("");
   const [mappingResults, setMappingResults] = useState([]);
   const [error, setError] = useState(null);
 
@@ -23,29 +23,44 @@ export default function ServiceMapping() {
     }
 
     const resourceList = services
-      .split(',')
-      .map(s => s.trim())
+      .split(",")
+      .map((s) => s.trim())
       .filter(Boolean);
 
     try {
-      const res = await cloudApi.post("/mapping", {
-        provider,
-        services: resourceList
-      });
+      const res = await cloudApi.post(
+        "/mapping",
+        {
+          provider,
+          services: resourceList,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      const formatted = res.data.mapped.map(item => ({
+      if (!res.data || !res.data.mapped) {
+        throw new Error("Invalid response from server.");
+      }
+
+      const formatted = res.data.mapped.map((item) => ({
         source_service: item.originalService,
-        target_service: item.gcpEquivalent
+        target_service: item.gcpEquivalent,
       }));
 
       setMappingResults(formatted);
 
-      // Save to localStorage for Report page
+      // Save for report page
       const existing = JSON.parse(localStorage.getItem("cloudCostData") || "{}");
-      localStorage.setItem("cloudCostData", JSON.stringify({
-        ...existing,
-        mappingSummary: formatted
-      }));
+      localStorage.setItem(
+        "cloudCostData",
+        JSON.stringify({
+          ...existing,
+          mappingSummary: formatted,
+        })
+      );
+
+      alert("✅ Services mapped successfully!");
     } catch (err) {
       console.error("Mapping Error:", err);
       setError("❌ Failed to map services. Check input or try again.");
@@ -60,7 +75,11 @@ export default function ServiceMapping() {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Cloud Provider</label>
-            <select className="form-select" value={provider} onChange={(e) => setProvider(e.target.value)}>
+            <select
+              className="form-select"
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+            >
               <option value="AWS">AWS</option>
               <option value="Azure">Azure</option>
             </select>
@@ -78,7 +97,9 @@ export default function ServiceMapping() {
 
           {error && <div className="alert alert-danger mb-3">{error}</div>}
 
-          <button className="btn btn-primary w-100" type="submit">Map to GCP</button>
+          <button className="btn btn-primary w-100" type="submit">
+            Map to GCP
+          </button>
         </form>
 
         {mappingResults.length > 0 && (
