@@ -5,18 +5,18 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Allowed Origins
+// ✅ 1. CORS Setup FIRST
 const allowedOrigins = [
   "http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
 ];
 
-// ✅ CORS Setup — handle OPTIONS properly
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -25,64 +25,49 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: "GET,POST,PUT,DELETE,OPTIONS",
-  allowedHeaders: "*"
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-app.options("*", cors({
-  origin: allowedOrigins,
-  credentials: true,
-  allowedHeaders: "*"
-}));
-
-// ✅ Middleware
+// ✅ 2. JSON and Cookie Parsing
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Debug Log Middleware
+// ✅ 3. Debug Log Middleware
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
-// ✅ MongoDB Connection
+// ✅ 4. MongoDB Connection
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 })
 .then(() => console.log("✅ MongoDB connected"))
-.catch(err => console.error("❌ MongoDB error:", err));
+.catch((err) => console.error("❌ MongoDB error:", err));
 
-// ✅ Load Routes with Debugging
-function safeRouteMount(path, routePath) {
-  try {
-    console.log(`🔍 Mounting route ${path} from ${routePath}`);
-    app.use(path, require(routePath));
-  } catch (err) {
-    console.error(`❌ Failed to mount ${path} from ${routePath}:`, err);
-  }
-}
+// ✅ 5. API Routes
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/cloud", require("./routes/cloud"));
 
-safeRouteMount("/api/auth", "./routes/auth");
-safeRouteMount("/api/cloud", "./routes/cloud");
-
-// ✅ Health Check
+// ✅ 6. Health Check
 app.get("/", (req, res) => {
   res.send("🌐 CloudCost Analyzer Backend Running");
 });
 
-// ✅ 404
+// ✅ 7. 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ✅ Global Error Handler
+// ✅ 8. Global Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Global error:", err.stack || err.message);
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-// ✅ Start Server
+// ✅ 9. Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
