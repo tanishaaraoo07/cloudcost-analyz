@@ -22,4 +22,3 @@ docker-compose.override.yml
 .vscode/
 .idea/
 
-scanRoutes.js
