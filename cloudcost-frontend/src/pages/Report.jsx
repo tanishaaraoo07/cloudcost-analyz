@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { downloadReport } from "../api";
 import { saveAs } from "file-saver";
+import html2canvas from "html2canvas";
 import {
   BarChart,
   Bar,
@@ -17,6 +18,7 @@ export default function Report() {
   const [costData, setCostData] = useState([]);
   const [mappingData, setMappingData] = useState([]);
   const [discoveredData, setDiscoveredData] = useState([]);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     const raw = JSON.parse(localStorage.getItem("cloudCostData")) || {};
@@ -47,24 +49,34 @@ export default function Report() {
   }, []);
 
   const downloadPDF = async () => {
-  if (!discoveredData.length || !mappingData.length || !costData.length) {
-    alert("⚠️ Some sections are empty. Please run discovery, mapping, and cost comparison first.");
-    return;
-  }
-  try {
-    const response = await downloadReport({
-      discovered: discoveredData,
-      mapped: mappingData,
-      comparison: costData,
-    });
-    const blob = new Blob([response.data], { type: "application/pdf" });
-    saveAs(blob, `CloudCost-Report-${Date.now()}.pdf`);
-  } catch (err) {
-    console.error("❌ PDF Download Error:", err);
-    alert("Failed to generate or download PDF.");
-  }
-};
+    if (!discoveredData.length || !mappingData.length || !costData.length) {
+      alert("⚠️ Some sections are empty. Please run discovery, mapping, and cost comparison first.");
+      return;
+    }
 
+    try {
+      // Capture chart as image
+      let chartImageBase64 = null;
+      if (chartRef.current) {
+        const canvas = await html2canvas(chartRef.current);
+        chartImageBase64 = canvas.toDataURL("image/png").split(",")[1]; // remove data:image/png;base64,
+      }
+
+      // Send data to backend
+      const response = await downloadReport({
+        discovered: discoveredData,
+        mapped: mappingData,
+        comparison: costData,
+        chartImageBase64
+      });
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      saveAs(blob, `CloudCost-Report-${Date.now()}.pdf`);
+    } catch (err) {
+      console.error("❌ PDF Download Error:", err);
+      alert("Failed to generate or download PDF.");
+    }
+  };
 
   return (
     <div className="report-wrapper px-4 py-5">
@@ -113,17 +125,19 @@ export default function Report() {
         {costData.length > 0 && (
           <>
             <h5 className="mt-4 text-info">📉 Cost Comparison Chart</h5>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={costData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="resourceType" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="currentCost" fill="#8884d8" name="Current Cost" />
-                <Bar dataKey="gcpCost" fill="#82ca9d" name="GCP Cost" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div ref={chartRef} id="costChart">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={costData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="resourceType" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="currentCost" fill="#8884d8" name="Current Cost" />
+                  <Bar dataKey="gcpCost" fill="#82ca9d" name="GCP Cost" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </>
         )}
 

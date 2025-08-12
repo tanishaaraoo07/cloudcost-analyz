@@ -1,61 +1,112 @@
-// services/pdfgenerator.js
-
 const PDFDocument = require("pdfkit");
 const getStream = require("get-stream");
 
-/**
- * Generates a PDF report for Cloud Cost Analyzer
- * @param {Object} data
- * @param {Array} data.discovered - Discovered resources list
- * @param {Array} data.mapped - Mapped service list
- * @param {Array} data.comparison - Cost comparison list
- * @returns {Buffer} PDF buffer
- */
-async function generatePdfReport({ discovered = [], mapped = [], comparison = [] }) {
+async function generatePdfReport({ discovered = [], mapped = [], comparison = [], chartImageBase64 }) {
   const doc = new PDFDocument({ margin: 50 });
-
   const buffers = [];
   doc.on("data", buffers.push.bind(buffers));
-  doc.on("end", () => {});
 
   // Title
   doc.font("Helvetica-Bold").fontSize(20).fillColor("#333333")
     .text("Cloud Cost Analyzer Report", { align: "center" });
   doc.moveDown(2);
 
-  // Section: Discovered Resources
+  // 1️⃣ Chart Image (optional)
+  if (chartImageBase64) {
+    try {
+      const chartBuffer = Buffer.from(chartImageBase64, "base64");
+      doc.image(chartBuffer, { fit: [450, 300], align: "center" });
+      doc.moveDown(1.5);
+    } catch (err) {
+      console.error("⚠️ Chart embed error:", err.message);
+    }
+  }
+
+  // 2️⃣ Discovered Resources Table
   if (discovered.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).fillColor("#000000").text("1. Discovered Resources");
+    doc.font("Helvetica-Bold").fontSize(14).text("1. Discovered Resources");
     doc.moveDown(0.5);
-    discovered.forEach((res, idx) => {
-      doc.font("Helvetica").fontSize(11).fillColor("#444444")
-        .text(`${idx + 1}. ${JSON.stringify(res)}`, { indent: 20 });
+
+    // Header
+    doc.font("Helvetica-Bold").fontSize(11)
+      .text("Service Type", 50, doc.y, { continued: true })
+      .text("Identifier / Name", 180, { continued: true })
+      .text("Extra Info", 350);
+    doc.moveDown(0.2);
+
+    // Rows
+    discovered.forEach((res) => {
+      const type = res.type || "N/A";
+      const idOrName = res.id || res.bucket || res.db || "—";
+      const extra = res.region || res.zone || "";
+
+      doc.font("Helvetica").fontSize(10)
+        .text(type, 50, doc.y, { continued: true })
+        .text(idOrName, 180, { continued: true })
+        .text(extra, 350);
     });
+
     doc.moveDown(1.5);
   }
 
-  // Section: Service Mappings
+  // 3️⃣ GCP Service Mappings Table
   if (mapped.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).fillColor("#000000").text("2. GCP Service Mappings");
+    doc.font("Helvetica-Bold").fontSize(14).text("2. GCP Service Mappings");
     doc.moveDown(0.5);
-    mapped.forEach((m, idx) => {
-      doc.font("Helvetica").fontSize(11).fillColor("#444444")
-        .text(`${idx + 1}. ${m.originalService} → ${m.gcpEquivalent}`, { indent: 20 });
+
+    // Header
+    doc.font("Helvetica-Bold").fontSize(11)
+      .text("Original Service", 50, doc.y, { continued: true })
+      .text("GCP Equivalent", 250);
+    doc.moveDown(0.2);
+
+    // Rows
+    mapped.forEach((m) => {
+      doc.font("Helvetica").fontSize(10)
+        .text(m.originalService || "N/A", 50, doc.y, { continued: true })
+        .text(m.gcpEquivalent || "N/A", 250);
     });
+
     doc.moveDown(1.5);
   }
 
-  // Section: Cost Comparison
+  // 4️⃣ Cost Comparison Table
   if (comparison.length > 0) {
-    doc.font("Helvetica-Bold").fontSize(14).fillColor("#000000").text("3. Cost Comparison");
+    doc.font("Helvetica-Bold").fontSize(14).text("3. Cost Comparison");
     doc.moveDown(0.5);
-    comparison.forEach((item, idx) => {
-      doc.font("Helvetica").fontSize(11).fillColor("#444444")
-        .text(
-          `${idx + 1}. ${item.resourceType} (${item.provider}) - $${item.currentCost} → GCP: $${item.gcpCost} | Savings: $${item.estimatedSavings}`,
-          { indent: 20 }
-        );
+
+    // Header
+    doc.font("Helvetica-Bold").fontSize(11)
+      .text("Service", 50, doc.y, { continued: true })
+      .text("Current Cost", 200, { continued: true })
+      .text("GCP Cost", 300, { continued: true })
+      .text("Savings", 400);
+    doc.moveDown(0.2);
+
+    // Rows
+    comparison.forEach((item) => {
+      doc.font("Helvetica").fontSize(10)
+        .text(item.resourceType || "N/A", 50, doc.y, { continued: true })
+        .text(`$${item.currentCost}`, 200, { continued: true })
+        .text(`$${item.gcpCost}`, 300, { continued: true })
+        .text(`$${item.estimatedSavings}`, 400);
     });
+
+    // Totals row
+    const totalAWS = comparison
+      .filter((i) => i.provider === "AWS")
+      .reduce((sum, i) => sum + i.currentCost, 0);
+
+    const totalAzure = comparison
+      .filter((i) => i.provider === "Azure")
+      .reduce((sum, i) => sum + i.currentCost, 0);
+
+    const totalGCP = comparison.reduce((sum, i) => sum + i.gcpCost, 0);
+
+    doc.moveDown(0.5);
+    doc.font("Helvetica-Bold").fontSize(11)
+      .text("TOTAL →", 50, doc.y, { continued: true })
+      .text(`AWS: $${totalAWS.toFixed(2)} | Azure: $${totalAzure.toFixed(2)} | GCP: $${totalGCP.toFixed(2)}`, 200);
   }
 
   doc.end();
