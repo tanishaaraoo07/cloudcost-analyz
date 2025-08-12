@@ -5,18 +5,18 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ 1. CORS Setup FIRST
+// ✅ Allowed Origins
 const allowedOrigins = [
   "http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
 ];
 
+// ✅ CORS Setup — handle OPTIONS properly
 app.use(cors({
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -25,49 +25,56 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "*"
 }));
 
-// ✅ 2. JSON and Cookie Parsing
+// ✅ Ensure preflight requests work
+app.options("*", cors({
+  origin: allowedOrigins,
+  credentials: true,
+  allowedHeaders: "*"
+}));
+
+// ✅ Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ 3. Debug Log Middleware
+// ✅ Debug Log Middleware
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
-// ✅ 4. MongoDB Connection
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
+  useUnifiedTopology: true
 })
 .then(() => console.log("✅ MongoDB connected"))
-.catch((err) => console.error("❌ MongoDB error:", err));
+.catch(err => console.error("❌ MongoDB error:", err));
 
-// ✅ 5. API Routes
+// ✅ Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/cloud", require("./routes/cloud"));
 
-// ✅ 6. Health Check
+// ✅ Health Check
 app.get("/", (req, res) => {
   res.send("🌐 CloudCost Analyzer Backend Running");
 });
 
-// ✅ 7. 404 Fallback
+// ✅ 404
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// ✅ 8. Global Error Handler
+// ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Global error:", err.stack || err.message);
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-// ✅ 9. Start Server
+// ✅ Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
