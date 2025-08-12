@@ -71,38 +71,32 @@ router.post("/discover", (req, res) => {
 });
 
 // ✅ POST /api/cloud/report
+
 router.post("/report", async (req, res) => {
   try {
     const { discovered, mapped, comparison, chartImageBase64 } = req.body;
 
-    // Validate inputs
-    if (!Array.isArray(discovered) || !Array.isArray(mapped) || !Array.isArray(comparison)) {
-      return res.status(400).json({ error: "Invalid data format. Expected arrays." });
+    // Validate
+    if (!discovered || !mapped || !comparison) {
+      return res.status(400).json({ error: "Missing required report data" });
     }
 
-    console.log("📄 Report Data Received:", {
-      discoveredCount: discovered.length,
-      mappedCount: mapped.length,
-      comparisonCount: comparison.length,
-      hasChart: !!chartImageBase64
-    });
-
-    // Generate PDF
+    // Generate PDF buffer
     const pdfBuffer = await generatePdfReport({
       discovered,
       mapped,
       comparison,
-      chartImageBase64
+      chartImageBase64: chartImageBase64 || null
     });
 
-    // Send as file
+    // Send PDF
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=CloudCost-Report-${Date.now()}.pdf`);
+    res.setHeader("Content-Disposition", 'attachment; filename="CloudCost-Report.pdf"');
     res.send(pdfBuffer);
 
   } catch (error) {
-    console.error("❌ PDF Generation Error:", error);
-    res.status(500).json({ error: "Failed to generate report", details: error.message });
+    console.error("❌ Error generating PDF:", error);
+    res.status(500).json({ error: "Failed to generate PDF", details: error.message });
   }
 });
 
