@@ -29,7 +29,6 @@ app.use(cors({
   allowedHeaders: "*"
 }));
 
-// ✅ Ensure preflight requests work
 app.options("*", cors({
   origin: allowedOrigins,
   credentials: true,
@@ -54,9 +53,18 @@ mongoose.connect(process.env.MONGO_URL, {
 .then(() => console.log("✅ MongoDB connected"))
 .catch(err => console.error("❌ MongoDB error:", err));
 
-// ✅ Routes
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/cloud", require("./routes/cloud"));
+// ✅ Load Routes with Debugging
+function safeRouteMount(path, routePath) {
+  try {
+    console.log(`🔍 Mounting route ${path} from ${routePath}`);
+    app.use(path, require(routePath));
+  } catch (err) {
+    console.error(`❌ Failed to mount ${path} from ${routePath}:`, err);
+  }
+}
+
+safeRouteMount("/api/auth", "./routes/auth");
+safeRouteMount("/api/cloud", "./routes/cloud");
 
 // ✅ Health Check
 app.get("/", (req, res) => {
