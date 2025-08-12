@@ -33,7 +33,17 @@ export const map = (data) => cloudApi.post("/mapping", data);
 export const compare = (data) => cloudApi.post("/compare", data);
 
 // PDF download (as Blob)
-export const downloadReport = (data) =>
-  cloudApi.post("/report", data, {
-    responseType: "blob"
-  });
+// PDF download (as Blob)
+export const downloadReport = ({ discovered, mapped, comparison, chartImageBase64 }) =>
+  cloudApi.post(
+    "/report",
+    {
+      discovered: discovered || [],
+      mapped: mapped || [],
+      comparison: comparison || [],
+      chartImageBase64: chartImageBase64 || null
+    },
+    {
+      responseType: "blob"
+    }
+  );
