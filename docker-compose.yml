@@ -4,8 +4,7 @@ services:
   backend:
     build: ./cloudcost-backend
     ports:
-      - "8000:8000"
-    working_dir: /app
+      - "3001:3000"
     volumes:
       - ./cloudcost-backend:/app
 
@@ -13,6 +12,5 @@ services:
     build: ./cloudcost-frontend
     ports:
       - "3000:3000"
-    working_dir: /app
     volumes:
       - ./cloudcost-frontend:/app

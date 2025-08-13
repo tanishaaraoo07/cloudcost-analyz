@@ -22,3 +22,9 @@ docker-compose.override.yml
 .vscode/
 .idea/
 
+
+# Build folders
+cloudcost-frontend/build/
+# Docker temp files (optional)
+*.tmp
+

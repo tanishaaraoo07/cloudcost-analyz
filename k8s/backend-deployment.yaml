@@ -16,4 +16,4 @@ spec:
       - name: backend
         image: your-dockerhub-username/cloudcost-backend:latest
         ports:
-        - containerPort: 8000
+        - containerPort: 3000
