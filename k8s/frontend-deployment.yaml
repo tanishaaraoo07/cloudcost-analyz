@@ -16,4 +16,4 @@ spec:
       - name: frontend
         image: your-dockerhub-username/cloudcost-frontend:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 8000

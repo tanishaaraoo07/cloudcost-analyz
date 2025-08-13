@@ -27,4 +27,8 @@ docker-compose.override.yml
 cloudcost-frontend/build/
 # Docker temp files (optional)
 *.tmp
+# Kubernetes
+.kube/
+
+
 

@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: cloudcost-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: cloudcost-backend
@@ -13,7 +13,7 @@ spec:
         app: cloudcost-backend
     spec:
       containers:
-      - name: backend
-        image: your-dockerhub-username/cloudcost-backend:latest
+      - name: cloudcost-backend
+        image: YOUR_DOCKERHUB_USERNAME/cloudcost-backend:latest
         ports:
         - containerPort: 3000

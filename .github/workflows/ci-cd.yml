@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Backend build & push
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/cloudcost-backend:latest ./cloudcost-backend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloudcost-backend:latest
+
+      # Frontend build & push
+      - name: Build and push frontend
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/cloudcost-frontend:latest ./cloudcost-frontend
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloudcost-frontend:latest
+
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/backend-service.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-service.yaml
