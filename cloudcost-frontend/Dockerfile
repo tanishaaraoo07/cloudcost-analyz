@@ -1,4 +1,3 @@
-# React frontend
 FROM node:20-alpine AS build
 
 WORKDIR /app
@@ -9,8 +8,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Serve frontend
+# Stage 2: serve the built app
 FROM node:20-alpine
+
 WORKDIR /app
 RUN npm install -g serve
 COPY --from=build /app/dist ./dist
