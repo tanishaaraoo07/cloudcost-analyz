@@ -9,17 +9,23 @@ const { generatePdfReport } = require("../services/pdfGenerator");
 // ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res) => {
   try {
+    console.log("📩 Incoming Compare Request:", req.body);
+
     const { provider, resources } = req.body;
     if (!provider || !Array.isArray(resources)) {
-      return res.status(400).json({ error: "Missing or invalid provider/resources" });
+      console.warn("⚠️ Invalid request payload");
+      return res.status(200).json([]); // Return empty instead of 400
     }
+
     const result = await compareCosts(provider, resources);
-    return res.status(200).json({ result });
+    return res.status(200).json(result);
   } catch (err) {
-    console.error("❌ Error in /compare:", err.message);
+    console.error("❌ Error in /compare:", err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+//module.exports = router;
 
 
 // ✅ POST /api/cloud/mapping
@@ -33,9 +39,12 @@ router.post("/mapping", (req, res) => {
       return res.status(400).json({ error: "Missing provider or services" });
     }
 
-    // Ensure array format
+    // Normalize and ensure array format
     if (typeof services === "string") {
-      services = services.split(",").map((s) => s.trim()).filter(Boolean);
+      services = services
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
 
     if (!Array.isArray(services) || services.length === 0) {
@@ -43,14 +52,18 @@ router.post("/mapping", (req, res) => {
     }
 
     const mapped = mapServices(provider, services);
-    console.log("✅ Mapped services:", mapped);
 
-    res.json({ mapped });
+    res.json({
+      provider,
+      totalMapped: mapped.length,
+      mapped
+    });
   } catch (err) {
     console.error("❌ Mapping error:", err);
     res.status(500).json({ error: "Mapping failed", details: err.message });
   }
 });
+
 
 
 

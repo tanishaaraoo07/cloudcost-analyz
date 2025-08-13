@@ -13,14 +13,23 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function CostBarChart({ comparison }) {
   const labels = comparison.map(item => item.type);
-  const currentCosts = comparison.map(item => item.current_cost);
-  const gcpCosts = comparison.map(item => item.gcp_cost);
+
+  const currentCosts = comparison.map(item =>
+    item.current_cost !== undefined ? item.current_cost : 0
+  );
+  const gcpCosts = comparison.map(item =>
+    item.gcp_cost !== undefined ? item.gcp_cost : 0
+  );
+
+  // Dynamic label based on actual provider in first row
+  const providerLabel =
+    comparison.length > 0 ? comparison[0].current_provider : "Current Provider";
 
   const data = {
     labels,
     datasets: [
       {
-        label: 'Current Provider',
+        label: providerLabel,
         backgroundColor: '#007bff',
         data: currentCosts,
       },

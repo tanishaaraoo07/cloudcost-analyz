@@ -1,64 +1,80 @@
-// services/compare.js
-
-const costTable = {
-  EC2: { AWS: 25, GCP: 20, Azure: 23 },
-  S3: { AWS: 5, GCP: 4, Azure: 6 },
-  RDS: { AWS: 15, GCP: 13, Azure: 16 },
-};
-
-function compareCosts(provider, resources) {
-  const comparison = [];
-
-  if (!Array.isArray(resources)) {
-    console.warn("Invalid resources input. Must be an array.");
-    return [];
-  }
-
-  for (const res of resources) {
-    const { type } = res;
-
-    if (!type || !costTable[type]) {
-      console.warn(`Unknown or unsupported resource type: ${type}`);
-      comparison.push({
-        resourceType: type || "Unknown",
-        provider,
-        currentCost: 0,
-        gcpCost: 0,
-        estimatedSavings: 0,
-        note: "Unsupported resource type",
-      });
-      continue;
+// compareCosts.js
+async function compareCosts(provider, resources) {
+    // ✅ Validate inputs
+    if (!provider || !Array.isArray(resources) || resources.length === 0) {
+        return {
+            error: "Missing or invalid provider/resources",
+            awsCosts: [],
+            azureCosts: [],
+            comparisonSummary: "No resources to compare."
+        };
     }
 
-    const costs = costTable[type];
-    const currentCost = costs[provider];
+    const awsCosts = [];
+    const azureCosts = [];
 
-    if (currentCost === undefined) {
-      console.warn(`No pricing found for ${type} on ${provider}`);
-      comparison.push({
-        resourceType: type,
-        provider,
-        currentCost: 0,
-        gcpCost: costs["GCP"] || 0,
-        estimatedSavings: 0,
-        note: "Pricing not available for this provider",
-      });
-      continue;
+    for (const resource of resources) {
+        const { type, instanceType, region, engine, storageGB } = resource;
+
+        let awsCost = 0;
+        let azureCost = 0;
+
+        switch (type.toLowerCase()) {
+            case "ec2":
+                awsCost = 8;   // Example EC2 cost
+                azureCost = 9; // Example Azure VM cost
+                break;
+
+            case "vm": // Azure VM (when discovered directly)
+                awsCost = 8;
+                azureCost = 9;
+                break;
+
+            case "rds":
+                awsCost = 15; // Example AWS RDS cost
+                azureCost = 16; // Example Azure SQL cost
+                break;
+
+            case "sql": // Azure SQL standalone
+                awsCost = 15;
+                azureCost = 16;
+                break;
+
+            case "s3":
+                awsCost = (storageGB || 50) * 0.023;
+                azureCost = (storageGB || 50) * 0.02;
+                break;
+
+            case "blob": // Azure Blob Storage
+                awsCost = (storageGB || 50) * 0.023;
+                azureCost = (storageGB || 50) * 0.02;
+                break;
+
+            default:
+                awsCost = 10;
+                azureCost = 10;
+                break;
+        }
+
+        awsCosts.push({ type, cost: awsCost });
+        azureCosts.push({ type, cost: azureCost });
     }
 
-    const gcpCost = costs["GCP"] || 0;
-    const estimatedSavings = currentCost - gcpCost;
+    // 📊 Calculate totals
+    const awsTotal = awsCosts.reduce((sum, r) => sum + r.cost, 0);
+    const azureTotal = azureCosts.reduce((sum, r) => sum + r.cost, 0);
 
-    comparison.push({
-      resourceType: type,
-      provider,
-      currentCost,
-      gcpCost,
-      estimatedSavings,
-    });
-  }
+    // 📝 Summary
+    let comparisonSummary;
+    if (awsTotal < azureTotal) {
+        comparisonSummary = `AWS is cheaper by $${(azureTotal - awsTotal).toFixed(2)} per month.`;
+    } else if (azureTotal < awsTotal) {
+        comparisonSummary = `Azure is cheaper by $${(awsTotal - azureTotal).toFixed(2)} per month.`;
+    } else {
+        comparisonSummary = "Both providers have the same estimated cost.";
+    }
 
-  return comparison;
+    return { awsCosts, azureCosts, comparisonSummary };
 }
 
-module.exports = { compareCosts };
+module.exports = compareCosts;

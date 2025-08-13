@@ -3,13 +3,18 @@ import { cloudApi } from "../api";
 import CostBarChart from "../components/CostBarChart";
 
 export default function CostComparison() {
-  const [resources, setResources] = useState([{ type: "EC2", usage: 1, provider: "AWS" }]);
+  const [resources, setResources] = useState([
+    { type: "EC2", usage: 1, provider: "AWS" },
+  ]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleAdd = () => {
-    setResources([...resources, { type: "EC2", usage: 1, provider: "AWS" }]);
+    setResources([
+      ...resources,
+      { type: "EC2", usage: 1, provider: "AWS" },
+    ]);
   };
 
   const handleChange = (idx, field, value) => {
@@ -29,37 +34,46 @@ export default function CostComparison() {
     setError(null);
 
     try {
-      const provider = resources[0].provider;
-      const simplified = resources.map(r => ({ type: r.type }));
+      // Send type, usage, and provider for each resource
+      const simplified = resources.map((r) => ({
+        type: r.type,
+        usage: Number(r.usage) || 1,
+        provider: r.provider,
+      }));
 
       const response = await cloudApi.post("/compare", {
-        provider,
         resources: simplified,
       });
 
       const comparison = response.data.result || [];
 
-      // Convert for Report.jsx
-      const formatted = comparison.map(item => ({
-        type: item.resourceType,
-        current_provider: item.provider,
-        current_cost: item.currentCost,
-        gcp_cost: item.gcpCost,
-        aws_cost: item.provider === "AWS" ? item.currentCost : null,
-        azure_cost: item.provider === "Azure" ? item.currentCost : null,
-        savings: item.estimatedSavings,
-      }));
+      // Map backend data per resource
+      const formatted = comparison.map((item, idx) => {
+        const prov = resources[idx]?.provider || "AWS"; // fallback
+        return {
+          type: item.resourceType,
+          current_provider: prov,
+          current_cost: item.currentCost,
+          gcp_cost: item.gcpCost,
+          aws_cost: prov === "AWS" ? item.currentCost : null,
+          azure_cost: prov === "Azure" ? item.currentCost : null,
+          savings: item.estimatedSavings,
+        };
+      });
+
+      // Save results for report
+      localStorage.setItem(
+        "cloudCostData",
+        JSON.stringify({
+          costSummary: formatted,
+          mappingSummary: response.data.mapping || [],
+        })
+      );
 
       setResults(formatted);
-
-      localStorage.setItem("cloudCostData", JSON.stringify({
-        costSummary: formatted,
-        mappingSummary: [], // mapping added later
-      }));
-
-      localStorage.setItem("comparisonResult", JSON.stringify(formatted));
     } catch (err) {
-      setError("Comparison failed");
+      console.error(err);
+      setError("Comparison failed. Please check your inputs.");
     } finally {
       setLoading(false);
     }
@@ -73,12 +87,17 @@ export default function CostComparison() {
         {resources.map((res, idx) => (
           <div className="row g-3 mb-3" key={idx}>
             <div className="col-md-4">
-              <select className="form-select" value={res.type} onChange={(e) => handleChange(idx, "type", e.target.value)}>
+              <select
+                className="form-select"
+                value={res.type}
+                onChange={(e) => handleChange(idx, "type", e.target.value)}
+              >
                 <option>EC2</option>
                 <option>S3</option>
                 <option>RDS</option>
                 <option>VM</option>
-                <option>Blob Storage</option>
+                <option>Blob</option>
+                <option>SQL</option>
               </select>
             </div>
             <div className="col-md-4">
@@ -87,11 +106,15 @@ export default function CostComparison() {
                 className="form-control"
                 value={res.usage}
                 onChange={(e) => handleChange(idx, "usage", e.target.value)}
-                placeholder="Usage"
+                placeholder="Usage (hours/GB)"
               />
             </div>
             <div className="col-md-4">
-              <select className="form-select" value={res.provider} onChange={(e) => handleChange(idx, "provider", e.target.value)}>
+              <select
+                className="form-select"
+                value={res.provider}
+                onChange={(e) => handleChange(idx, "provider", e.target.value)}
+              >
                 <option>AWS</option>
                 <option>Azure</option>
               </select>
@@ -100,8 +123,14 @@ export default function CostComparison() {
         ))}
 
         <div className="d-flex justify-content-between mb-3">
-          <button className="btn btn-outline-secondary" onClick={handleAdd}>+ Add Resource</button>
-          <button className="btn btn-success" onClick={handleCompare} disabled={loading}>
+          <button className="btn btn-outline-secondary" onClick={handleAdd}>
+            + Add Resource
+          </button>
+          <button
+            className="btn btn-success"
+            onClick={handleCompare}
+            disabled={loading}
+          >
             {loading ? "Comparing..." : "Compare Costs"}
           </button>
         </div>
