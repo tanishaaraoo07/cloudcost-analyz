@@ -9,30 +9,25 @@ const { generatePdfReport } = require("../services/pdfGenerator");
 // ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res) => {
   try {
-    console.log("📩 Incoming Compare Request Body:", JSON.stringify(req.body, null, 2));
+    const { resources } = req.body;
 
-    const { provider, resources } = req.body || {};
-
-    if (!provider) {
-      console.warn("⚠️ Missing provider field");
-      return res.status(400).json({ error: "Provider is required" });
-    }
-    if (!Array.isArray(resources)) {
-      console.warn("⚠️ Resources is not an array");
-      return res.status(400).json({ error: "Resources should be an array" });
+    if (!Array.isArray(resources) || resources.length === 0) {
+      return res.status(400).json({ error: "Invalid resources input" });
     }
 
-    const result = await compareCosts(provider, resources);
+    const result = await compareCosts(resources);
 
-    console.log(`✅ Comparison done for ${provider}`);
-    return res.status(200).json(result);
-
-  } catch (err) {
-    console.error("❌ Error in /compare:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    res.json({
+      result,
+      mapping: [], // Future mapping logic if needed
+    });
+  } catch (error) {
+    console.error("❌ Compare Error:", error);
+    res.status(500).json({ error: "Failed to compare costs" });
   }
 });
 
+module.exports = router;
 
 //module.exports = router;
 

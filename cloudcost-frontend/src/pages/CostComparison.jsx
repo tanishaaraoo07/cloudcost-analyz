@@ -24,42 +24,45 @@ export default function CostComparison() {
   };
 
   const handleCompare = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("🔒 Please log in to compare cloud costs.");
-      return;
-    }
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    alert("🔒 Please log in to compare cloud costs.");
+    return;
+  }
 
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      // Send type, usage, and provider for each resource
-      const simplified = resources.map((r) => ({
-        type: r.type,
-        usage: Number(r.usage) || 1,
-        provider: r.provider,
-      }));
+  try {
+    // ✅ Ensure every resource has provider, type, and usage
+    const simplified = resources.map((r) => ({
+      provider: r.provider?.trim() || "AWS", // fallback to AWS if empty
+      type: r.type?.trim() || "Unknown",
+      usage: Number(r.usage) > 0 ? Number(r.usage) : 1,
+    }));
 
-      const response = await cloudApi.post("/compare", {
-        resources: simplified,
-      });
+    // ✅ Send correct structure
+    const payload = { resources: simplified };
 
-      const comparison = response.data.result || [];
+    console.log("📤 Compare Request Payload:", payload);
 
-      // Map backend data per resource
-      const formatted = comparison.map((item, idx) => {
-        const prov = resources[idx]?.provider || "AWS"; // fallback
-        return {
-          type: item.resourceType,
-          current_provider: prov,
-          current_cost: item.currentCost,
-          gcp_cost: item.gcpCost,
-          aws_cost: prov === "AWS" ? item.currentCost : null,
-          azure_cost: prov === "Azure" ? item.currentCost : null,
-          savings: item.estimatedSavings,
-        };
-      });
+    const response = await cloudApi.post("/compare", payload);
+
+    const comparison = response.data.result || [];
+
+    // ✅ Map backend response safely
+    const formatted = comparison.map((item, idx) => {
+      const prov = simplified[idx]?.provider || "AWS";
+      return {
+        type: item.resourceType || simplified[idx]?.type || "Unknown",
+        current_provider: prov,
+        current_cost: item.currentCost || 0,
+        gcp_cost: item.gcpCost || 0,
+        aws_cost: prov === "AWS" ? item.currentCost || 0 : item.awsCost || 0,
+        azure_cost: prov === "Azure" ? item.currentCost || 0 : item.azureCost || 0,
+        savings: item.estimatedSavings || 0,
+      };
+    });
 
       // Save results for report
       localStorage.setItem(
