@@ -49,7 +49,7 @@ mongoose.connect(process.env.MONGO_URL, {
 
 // ✅ 5. API Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/cloud", require("./routes/cloud"));
+app.use("/api/cloud", require("./routes/cloud")); // <-- Compare route lives here
 
 // ✅ 6. Health Check
 app.get("/", (req, res) => {
