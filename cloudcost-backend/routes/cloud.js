@@ -7,27 +7,41 @@ const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
 
 // ✅ POST /api/cloud/compare
-router.post("/compare", async (req, res) => {
+router.post("/compare", async (req, res, next) => {
   try {
     const { resources } = req.body;
 
+    // ✅ Validation: must be array & non-empty
     if (!Array.isArray(resources) || resources.length === 0) {
-      return res.status(400).json({ error: "Invalid resources input" });
+      return res.status(400).json({
+        success: false,
+        message: "Request must contain a non-empty 'resources' array.",
+      });
+    }
+
+    // ✅ Validate each resource
+    for (const r of resources) {
+      if (!r.type || !r.provider) {
+        return res.status(400).json({
+          success: false,
+          message: "Each resource must have 'type' and 'provider'.",
+        });
+      }
+      if (typeof r.usage !== "number" || isNaN(r.usage) || r.usage <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "'usage' must be a positive number for all resources.",
+        });
+      }
     }
 
     const result = await compareCosts(resources);
+    res.json({ success: true, result });
 
-    res.json({
-      result,
-      mapping: [], // Future mapping logic if needed
-    });
-  } catch (error) {
-    console.error("❌ Compare Error:", error);
-    res.status(500).json({ error: "Failed to compare costs" });
+  } catch (err) {
+    next(err); // send to global error handler
   }
 });
-
-module.exports = router;
 
 //module.exports = router;
 

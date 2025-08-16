@@ -63,8 +63,11 @@ app.use((req, res) => {
 
 // ✅ 8. Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("❌ Global error:", err.stack || err.message);
-  res.status(500).json({ error: "Internal Server Error" });
+  console.error("❌ Backend Error:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 });
 
 // ✅ 9. Start Server

@@ -1,58 +1,66 @@
-// Static cost data for AWS, Azure, GCP
-const costTable = {
-  AWS: {
-    EC2: 0.12,
-    S3: 0.023,
-    RDS: 0.25,
-    VM: 0.15,      // Approx AWS EC2-like
-    Blob: 0.025,   // AWS S3-like
-    SQL: 0.20,     // AWS RDS-like
-  },
-  Azure: {
-    EC2: 0.11,     // Azure VM equivalent
-    S3: 0.024,     // Azure Blob equivalent
-    RDS: 0.22,     // Azure SQL Database
-    VM: 0.14,
-    Blob: 0.024,
-    SQL: 0.18,
-  },
-  GCP: {
-    EC2: 0.10,     // GCP Compute Engine
-    S3: 0.020,     // GCP Cloud Storage
-    RDS: 0.21,     // GCP Cloud SQL
-    VM: 0.13,
-    Blob: 0.022,
-    SQL: 0.17,
-  },
-};
+// services/compare.js
+// services/compare.js
 
-/**
- * Compare costs across providers.
- * @param {Array} resources - Array of { type, usage, provider }
- * @returns {Array} Comparison results
- */
-module.exports = async function compareCosts(resources) {
-  return resources.map((res) => {
-    const type = res.type;
-    const usage = Number(res.usage) || 1;
-    const provider = res.provider;
+async function compareCosts(req, res) {
+  try {
+    const { resources } = req.body;
 
-    if (!costTable[provider] || !costTable[provider][type]) {
-      throw new Error(`Invalid resource type/provider: ${type} - ${provider}`);
+    if (!resources || resources.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No resources provided",
+      });
     }
 
-    const currentCost = costTable[provider][type] * usage;
-    const gcpCost = costTable["GCP"][type] * usage;
-    const awsCost = costTable["AWS"][type] * usage;
-    const azureCost = costTable["Azure"][type] * usage;
+    // Example dummy cost calculation
+    const result = resources.map((r) => ({
+      provider: r.provider,
+      type: r.type,
+      cost: Math.floor(Math.random() * 100) + 1,
+    }));
+
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error("Compare error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+//module.exports = { compareCosts };
+
+
+// Example static pricing table (replace with real SDK calls later)
+const pricingTable = {
+  AWS: { VM: 0.12, Blob: 0.02, DB: 0.25 },
+  Azure: { VM: 0.11, Blob: 0.025, DB: 0.24 },
+  GCP: { VM: 0.10, Blob: 0.018, DB: 0.23 }
+};
+
+async function compareCosts(resources) {
+  return resources.map(r => {
+    const currentRate = pricingTable[r.provider]?.[r.type] || 0;
+    const awsRate = pricingTable.AWS?.[r.type] || 0;
+    const azureRate = pricingTable.Azure?.[r.type] || 0;
+    const gcpRate = pricingTable.GCP?.[r.type] || 0;
+
+    const currentCost = Number((currentRate * r.usage).toFixed(2));
+    const awsCost = Number((awsRate * r.usage).toFixed(2));
+    const azureCost = Number((azureRate * r.usage).toFixed(2));
+    const gcpCost = Number((gcpRate * r.usage).toFixed(2));
+
+    const cheapest = Math.min(awsCost, azureCost, gcpCost);
+    const estimatedSavings = Number((currentCost - cheapest).toFixed(2));
 
     return {
-      resourceType: type,
-      currentCost: parseFloat(currentCost.toFixed(2)),
-      gcpCost: parseFloat(gcpCost.toFixed(2)),
-      awsCost: parseFloat(awsCost.toFixed(2)),
-      azureCost: parseFloat(azureCost.toFixed(2)),
-      estimatedSavings: parseFloat((currentCost - gcpCost).toFixed(2)),
+      resourceType: r.type,
+      currentProvider: r.provider,
+      currentCost,
+      awsCost,
+      azureCost,
+      gcpCost,
+      estimatedSavings
     };
   });
-};
+}
+
+module.exports = compareCosts;
