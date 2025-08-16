@@ -24,7 +24,7 @@ export const cloudApi = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // Optional: 10s timeout
+  timeout: 30000, // Optional: 10s timeout
 });
 
 // ====================
