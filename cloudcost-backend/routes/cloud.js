@@ -7,12 +7,12 @@ const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
 //const { compareCosts } = require("../controllers/cloudController");
 router.post("/compare", compareCosts);
+
 // ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res, next) => {
   try {
     const { resources } = req.body;
 
-    // ✅ Validation: must be array & non-empty
     if (!Array.isArray(resources) || resources.length === 0) {
       return res.status(400).json({
         success: false,
@@ -20,7 +20,6 @@ router.post("/compare", async (req, res, next) => {
       });
     }
 
-    // ✅ Validate each resource
     for (const r of resources) {
       if (!r.type || !r.provider) {
         return res.status(400).json({
@@ -36,11 +35,11 @@ router.post("/compare", async (req, res, next) => {
       }
     }
 
-    const result = await compareCosts(resources);
+    const result = compareCosts(resources);
     res.json({ success: true, result });
 
   } catch (err) {
-    next(err); // send to global error handler
+    next(err);
   }
 });
 

@@ -5,11 +5,10 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
-const cloudRoutes = require("./routes/cloud");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ 1. CORS Setup FIRST
+// ✅ 1. CORS Setup
 const allowedOrigins = [
   "http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
@@ -49,7 +48,7 @@ mongoose.connect(process.env.MONGO_URL, {
 
 // ✅ 5. API Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/cloud", require("./routes/cloud")); // <-- Compare route lives here
+app.use("/api/cloud", require("./routes/cloud"));
 
 // ✅ 6. Health Check
 app.get("/", (req, res) => {
