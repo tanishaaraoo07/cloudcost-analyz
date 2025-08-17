@@ -12,6 +12,8 @@ router.post("/compare", compareCosts);
 router.post("/compare", async (req, res, next) => {
   try {
     const { resources } = req.body;
+    console.log("📩 Incoming compare request body:", req.body);
+    
 
     if (!Array.isArray(resources) || resources.length === 0) {
       return res.status(400).json({
