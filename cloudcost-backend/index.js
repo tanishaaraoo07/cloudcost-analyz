@@ -5,7 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 dotenv.config();
-
+const cloudRoutes = require("./routes/cloud");
 const app = express();
 const PORT = process.env.PORT || 5000;
 

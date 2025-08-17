@@ -5,7 +5,8 @@ const { compareCosts } = require("../services/compare");
 const { mapServices } = require("../services/mapping"); // ✅ FIXED
 const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
-
+const { compareCosts } = require("../controllers/cloudController");
+router.post("/compare", compareCosts);
 // ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res, next) => {
   try {
