@@ -1,3 +1,5 @@
+// index.js
+
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
@@ -48,7 +50,7 @@ mongoose.connect(process.env.MONGO_URL, {
 
 // ✅ 5. API Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/", require("./routes/cloud"));
+app.use("/api/cloud", require("./routes/cloud"));  // 👈 back to /api/cloud
 
 // ✅ 6. Health Check
 app.get("/", (req, res) => {
