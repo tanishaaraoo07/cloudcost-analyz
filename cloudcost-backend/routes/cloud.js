@@ -5,16 +5,13 @@ const { compareCosts } = require("../services/compare");
 const { mapServices } = require("../services/mapping"); // ✅ FIXED
 const { discoverResources } = require("../services/discover");
 const { generatePdfReport } = require("../services/pdfGenerator");
-//const { compareCosts } = require("../controllers/cloudController");
-router.post("/compare", compareCosts);
 
 // ✅ POST /api/cloud/compare
 router.post("/compare", async (req, res, next) => {
   try {
     const { resources } = req.body;
-    console.log("📩 Incoming compare request body:", req.body);
-    
 
+    // ✅ Validation: must be array & non-empty
     if (!Array.isArray(resources) || resources.length === 0) {
       return res.status(400).json({
         success: false,
@@ -22,6 +19,7 @@ router.post("/compare", async (req, res, next) => {
       });
     }
 
+    // ✅ Validate each resource
     for (const r of resources) {
       if (!r.type || !r.provider) {
         return res.status(400).json({
@@ -37,15 +35,13 @@ router.post("/compare", async (req, res, next) => {
       }
     }
 
-    const result = compareCosts(resources);
+    const result = await compareCosts(resources);
     res.json({ success: true, result });
 
   } catch (err) {
-    next(err);
+    next(err); // send to global error handler
   }
 });
-
-//module.exports = router;
 
 
 // ✅ POST /api/cloud/mapping
@@ -109,7 +105,7 @@ router.post("/report", async (req, res) => {
   try {
     const { discovered, mapped, comparison, chartImageBase64 } = req.body;
 
-    // Validate that arrays exist (avoid undefined errors)
+    // Validate arrays
     if (!Array.isArray(discovered) || !Array.isArray(mapped) || !Array.isArray(comparison)) {
       return res.status(400).json({ error: "Invalid data format. Expected arrays." });
     }
@@ -119,17 +115,23 @@ router.post("/report", async (req, res) => {
       discovered,
       mapped,
       comparison,
-      chartImageBase64: chartImageBase64 || null
+      chartImageBase64: chartImageBase64 || null,
     });
 
     // Send as downloadable PDF
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=CloudCost-Report.pdf");
-    res.send(pdfBuffer);
+    res
+      .status(200)
+      .set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=CloudCost-Report.pdf",
+        "Content-Length": pdfBuffer.length, // 👈 extra: ensures browser reads full PDF
+      })
+      .send(pdfBuffer);
   } catch (error) {
     console.error("❌ PDF Generation Error:", error);
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
+
 
 module.exports = router;
