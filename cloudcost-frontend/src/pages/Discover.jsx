@@ -110,7 +110,7 @@ function Discover() {
             onChange={(e) => setUseMock(e.target.checked)}
           />
           <label className="form-check-label" htmlFor="mockToggle">
-            Use Mock Discovery (for Recruiter Demo)
+            Use Mock Discovery (for Demo)
           </label>
         </div>
 
