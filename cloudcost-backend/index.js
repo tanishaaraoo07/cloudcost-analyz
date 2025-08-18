@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 // ✅ 1. CORS Setup FIRST
 const allowedOrigins = [
-  "http://localhost:5173",
+  //"http://localhost:5173",
   "https://cloudcost-analyz.vercel.app"
 ];
 
