@@ -11,24 +11,22 @@ const PORT = process.env.PORT || 5000;
 
 // ✅ 1. CORS Setup FIRST
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://cloudcost-analyz.vercel.app"
-  //"https://cloudcost-analyz.onrender.com"
+  //"http://localhost:5173",                // local dev
+  "https://cloudcost-analyz.vercel.app",  // vercel frontend
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error("❌ CORS BLOCKED:", origin);
-      callback(new Error("CORS error: " + origin));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true, // required for withCredentials:true in axios
+  })
+);
 
 // ✅ 2. JSON and Cookie Parsing
 app.use(express.json());
