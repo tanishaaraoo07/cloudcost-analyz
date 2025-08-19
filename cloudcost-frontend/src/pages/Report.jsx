@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import "./report.css";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "https://cloudcost-analyz.onrender.com";
+const BASE_URL = import.meta.env.VITE_REACT_APP_BASE_URL;
 
 export default function Report() {
   const [costData, setCostData] = useState([]);
@@ -66,7 +66,7 @@ export default function Report() {
 
       // Request backend for PDF
       const response = await axios.post(
-        `${BASE_URL}/api/cloud/report`,
+        `${BASE_URL}/cloud/report`,
         {
           discovered: discoveredData,
           mapped: mappingData,
